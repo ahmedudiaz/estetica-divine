@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Confirmación de Cita - Centro de Estética</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="patient-portal-body">
+  <div class="patient-card">
+    <div class="patient-header">
+      <div class="avatar-circle">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+      </div>
+      <h2 id="portal-clinic-name" style="font-size: 1.25rem; font-weight: 700;">Estética Divine</h2>
+      <p style="font-size: 0.85rem; opacity: 0.9; margin-top: 4px;">Confirmación de Cita Médica / Estética</p>
+    </div>
+
+    <div class="patient-body" id="portal-loading" style="text-align: center; padding: 40px 20px;">
+      <p style="color: var(--text-muted);">Cargando los detalles de tu cita...</p>
+    </div>
+
+    <div class="patient-body" id="portal-content" style="display: none;">
+      <div style="text-align: center; margin-bottom: 20px;">
+        <span class="status-badge" id="portal-status-badge" style="font-size: 0.85rem; padding: 6px 14px;">
+          <span class="status-dot"></span>
+          <span id="portal-status-text">Pendiente</span>
+        </span>
+        <h3 id="portal-greeting" style="font-size: 1.3rem; font-weight: 700; margin-top: 10px; color: var(--text-main);">¡Hola!</h3>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 4px;">Por favor, confirma si podrás asistir a tu cita de mañana.</p>
+      </div>
+
+      <div class="info-badge-list">
+        <div class="info-item">
+          <div class="info-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          </div>
+          <div class="info-text">
+            <h5>Tratamiento</h5>
+            <p id="portal-service-name">Limpieza Facial Profunda</p>
+          </div>
+        </div>
+
+        <div class="info-item">
+          <div class="info-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          </div>
+          <div class="info-text">
+            <h5>Fecha y Hora</h5>
+            <p id="portal-datetime">Mañana a las 10:00 hrs</p>
+          </div>
+        </div>
+
+        <div class="info-item">
+          <div class="info-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          </div>
+          <div class="info-text">
+            <h5>Especialista</h5>
+            <p id="portal-specialist">Cosmetóloga Constanza Díaz</p>
+          </div>
+        </div>
+
+        <div class="info-item">
+          <div class="info-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          </div>
+          <div class="info-text">
+            <h5>Ubicación</h5>
+            <p id="portal-address">Av. Principal 142, Suite 3B</p>
+          </div>
+        </div>
+
+        <div class="info-item" id="portal-instructions-box" style="background: #fdf2f4; border-color: #fbcfe8;">
+          <div class="info-icon" style="color: #ec4899;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+          </div>
+          <div class="info-text">
+            <h5 style="color: #be185d;">Indicaciones Previas</h5>
+            <p id="portal-instructions" style="font-weight: 500; font-size: 0.85rem; color: #831843;">Asistir sin maquillaje.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div id="portal-actions" style="display: flex; flex-direction: column; gap: 10px;">
+        <button class="btn btn-primary" id="btn-confirm-appointment" style="width: 100%; padding: 14px; font-size: 1rem; border-radius: var(--radius-md);">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          <span>Sí, Confirmo mi Asistencia</span>
+        </button>
+
+        <button class="btn btn-secondary" id="btn-cancel-appointment" style="width: 100%; padding: 12px; font-size: 0.875rem; border-radius: var(--radius-md);">
+          <span>No podré asistir / Reprogramar</span>
+        </button>
+      </div>
+
+      <!-- Success Confirmation View -->
+      <div id="portal-confirmed-view" style="display: none; text-align: center; padding: 16px 0;">
+        <div style="width: 60px; height: 60px; border-radius: 50%; background: #d1fae5; color: #10b981; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px auto;">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        <h4 style="font-size: 1.15rem; font-weight: 700; color: #065f46;">¡Cita Confirmada Exitosamente!</h4>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 6px;">
+          Hemos reservado tu lugar en la agenda. ¡Te esperamos mañana con gusto!
+        </p>
+        <a id="btn-contact-whatsapp" href="#" target="_blank" class="btn btn-whatsapp" style="margin-top: 18px; width: 100%; text-decoration: none;">
+          <span>Escribir al Centro por WhatsApp</span>
+        </a>
+      </div>
+
+      <!-- Reschedule View -->
+      <div id="portal-reschedule-view" style="display: none; text-align: center; padding: 16px 0;">
+        <div style="width: 60px; height: 60px; border-radius: 50%; background: #fee2e2; color: #ef4444; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px auto;">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </div>
+        <h4 style="font-size: 1.15rem; font-weight: 700; color: #991b1b;">Cita Cancelada / Reprogramación</h4>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 6px;">
+          Tu horario ha sido liberado. Por favor, comunícate con nosotros para coordinar una nueva fecha.
+        </p>
+        <a id="btn-reschedule-whatsapp" href="#" target="_blank" class="btn btn-whatsapp" style="margin-top: 18px; width: 100%; text-decoration: none;">
+          <span>Coordinar Nueva Fecha por WhatsApp</span>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <script src="/static/js/confirm.js"></script>
+</body>
+</html>

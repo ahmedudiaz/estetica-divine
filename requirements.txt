@@ -1,0 +1,2 @@
+# Estética Divine - Requisitos de Python
+# La aplicación utiliza la biblioteca estándar nativa de Python 3 (cero dependencias externas requeridas)

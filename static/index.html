@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Estética Divine - Agenda & Confirmación de Citas</title>
+  
+  <!-- PWA & Mobile Meta Tags -->
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#c97a8e">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Estética Divine">
+  <link rel="apple-touch-icon" href="/static/img/icon.svg">
+  <link rel="icon" type="image/svg+xml" href="/static/img/icon.svg">
+
+  <link rel="stylesheet" href="/static/css/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Sidebar (Escritorio) -->
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        </div>
+        <div class="brand-info">
+          <h1>Estética Divine</h1>
+          <p>Centro de Estética</p>
+        </div>
+      </div>
+
+      <ul class="nav-menu">
+        <li class="nav-item active" data-tab="agenda">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          <span>Agenda & Turnos</span>
+        </li>
+        <li class="nav-item" data-tab="reminders">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+          <span>Recordatorios 24h</span>
+          <span class="badge" id="badge-tomorrow-unconfirmed">0</span>
+        </li>
+        <li class="nav-item" data-tab="sync">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+          <span>Sincronizar Celular</span>
+        </li>
+        <li class="nav-item" data-tab="patients">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          <span>Pacientes & Fichas</span>
+        </li>
+        <li class="nav-item" data-tab="services">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          <span>Tratamientos</span>
+        </li>
+        <li class="nav-item" data-tab="settings">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          <span>Configuración & WhatsApp</span>
+        </li>
+      </ul>
+
+      <div class="sidebar-footer">
+        <div class="user-avatar">CD</div>
+        <div class="user-details">
+          <h4>Cosmetóloga Constanza Díaz</h4>
+          <p>Directora & Cosmetóloga</p>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <!-- Top Header -->
+      <header class="top-header">
+        <div class="header-title">
+          <h2 id="view-title">Agenda & Turnos</h2>
+          <p id="current-datetime-display">Cargando...</p>
+        </div>
+        <div class="header-actions">
+          <button class="btn btn-secondary btn-sm" id="btn-header-sync" title="Conectar Celular">
+            📱 Conectar Celular
+          </button>
+          <button class="btn btn-primary" id="btn-quick-new-appointment">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            <span>+ Agendar Cita</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- Content Body -->
+      <div class="content-body">
+        <!-- Stats Row -->
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-icon pink">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            </div>
+            <div class="stat-info">
+              <h3 id="stat-today-total">0</h3>
+              <p>Citas de Hoy</p>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon amber">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            </div>
+            <div class="stat-info">
+              <h3 id="stat-tomorrow-unconfirmed">0</h3>
+              <p>Mañana por Confirmar</p>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon green">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            </div>
+            <div class="stat-info">
+              <h3 id="stat-tomorrow-confirmed">0</h3>
+              <p>Mañana Confirmadas</p>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon blue">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+            </div>
+            <div class="stat-info">
+              <h3 id="stat-total-patients">0</h3>
+              <p>Pacientes Registradas</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 1: AGENDA -->
+        <section id="tab-agenda" class="tab-pane">
+          <div class="card">
+            <div class="card-header">
+              <div class="date-navigation">
+                <button class="btn btn-secondary btn-sm" id="btn-prev-day">◀</button>
+                <button class="btn btn-secondary btn-sm" id="btn-today">Hoy</button>
+                <button class="btn btn-secondary btn-sm" id="btn-next-day">▶</button>
+                <span class="current-date-label" id="agenda-date-display">Cargando...</span>
+              </div>
+
+              <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                <select id="filter-status" class="form-control" style="padding: 6px 12px; font-size: 0.85rem; width: auto;">
+                  <option value="">Todos los Estados</option>
+                  <option value="Pendiente">Pendiente</option>
+                  <option value="Recordatorio Enviado">Recordatorio Enviado</option>
+                  <option value="Confirmada">Confirmada</option>
+                  <option value="Completada">Completada</option>
+                  <option value="Cancelada">Cancelada</option>
+                </select>
+                <input type="date" id="agenda-date-picker" class="form-control" style="padding: 6px 12px; font-size: 0.85rem; width: auto;">
+              </div>
+            </div>
+
+            <div class="card-body">
+              <div id="agenda-appointments-list" class="timeline-view">
+                <!-- Citas inyectadas por JS -->
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- TAB 2: RECORDATORIOS 24H (WHATSAPP) -->
+        <section id="tab-reminders" class="tab-pane" style="display: none;">
+          <div class="card" style="margin-bottom: 20px; background: linear-gradient(to right, #fdf2f4, #ffffff);">
+            <div class="card-body" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
+              <div>
+                <h3 style="color: #1e293b; font-size: 1.2rem; font-weight: 700;">📲 Confirmaciones de Mañana (24h Antes)</h3>
+                <p style="color: var(--text-muted); font-size: 0.875rem; margin-top: 4px;">
+                  El sistema detecta automáticamente las pacientes con citas programadas para mañana. Envía el recordatorio por WhatsApp con el enlace directo para que confirmen con 1 toque.
+                </p>
+              </div>
+              <div>
+                <button class="btn btn-whatsapp" id="btn-send-all-reminders">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                  <span>Enviar Recordatorios Pendientes</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div id="tomorrow-reminders-list">
+            <!-- Inyectado por JS -->
+          </div>
+        </section>
+
+        <!-- TAB 3: SINCRONIZACIÓN CON EL CELULAR -->
+        <section id="tab-sync" class="tab-pane" style="display: none;">
+          <div class="card" style="margin-bottom: 24px;">
+            <div class="card-header">
+              <h3 class="card-title">📱 Conectar y Agendar desde tu Celular</h3>
+              <div style="display: flex; gap: 8px;">
+                <button class="btn btn-primary btn-sm" id="btn-activate-tunnel">
+                  🌐 Activar Acceso por Internet (4G/5G)
+                </button>
+              </div>
+            </div>
+            <div class="card-body">
+              <!-- Online Mode Banner -->
+              <div id="sync-mode-alert" style="background: linear-gradient(to right, #ecfdf5, #f0fdf4); border: 1px solid #a7f3d0; border-radius: var(--radius-md); padding: 14px 18px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                  <span style="font-size: 1.3rem;">🌍</span>
+                  <div>
+                    <strong id="sync-mode-title" style="color: #065f46; font-size: 0.9rem;">Acceso desde Cualquier Lugar (Datos Móviles 4G/5G)</strong>
+                    <p id="sync-mode-desc" style="color: #047857; font-size: 0.8rem;">
+                      Puedes abrir y usar la agenda desde tu celular estés donde estés, sin necesidad de estar en la misma red Wi-Fi.
+                    </p>
+                  </div>
+                </div>
+                <span class="status-badge status-Confirmada" id="sync-status-badge">
+                  <span class="status-dot"></span>
+                  <span id="sync-status-text">Listo</span>
+                </span>
+              </div>
+
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; align-items: start;">
+                <!-- QR Code Box -->
+                <div style="text-align: center; background: #fafbfc; border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); padding: 24px;">
+                  <h4 style="font-size: 1.05rem; font-weight: 700; margin-bottom: 6px;">Escanea con la Cámara de tu Celular</h4>
+                  <p style="font-size: 0.825rem; color: var(--text-muted); margin-bottom: 16px;" id="qr-desc-text">
+                    Apunta con la cámara de tu teléfono (iPhone o Android) para abrir la agenda al instante.
+                  </p>
+                  
+                  <div id="qr-code-container" style="display: flex; justify-content: center; margin: 12px 0;">
+                    <!-- QR Image -->
+                  </div>
+
+                  <div style="margin-top: 16px;">
+                    <label style="font-size: 0.775rem; color: var(--text-muted); font-weight: 600; display: block; margin-bottom: 4px;">Enlace Web para tu Celular:</label>
+                    <div style="display: flex; gap: 8px; justify-content: center;">
+                      <input type="text" id="sync-mobile-url" class="form-control" readonly style="font-size: 0.85rem; text-align: center; max-width: 280px; font-weight: 600;">
+                      <button class="btn btn-secondary btn-sm" onclick="copyInput('sync-mobile-url')">Copiar</button>
+                    </div>
+                  </div>
+
+                  <!-- Custom Public URL input -->
+                  <div style="margin-top: 14px; text-align: left; background: white; padding: 12px; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+                    <label style="font-size: 0.75rem; font-weight: 700; color: var(--text-main); display: block; margin-bottom: 4px;">
+                      ⚙️ Configurar URL Pública personalizada (Opcional):
+                    </label>
+                    <div style="display: flex; gap: 6px;">
+                      <input type="url" id="input-custom-public-url" class="form-control" placeholder="https://mi-dominio.com" style="font-size: 0.8rem; padding: 6px 10px;">
+                      <button class="btn btn-primary btn-sm" id="btn-save-custom-url" style="white-space: nowrap;">Guardar</button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Step by Step Guides -->
+                <div>
+                  <h4 style="font-size: 1.05rem; font-weight: 700; margin-bottom: 14px;">📲 Cómo Instalar la App en tu Celular (PWA)</h4>
+                  
+                  <div class="sync-guide-card">
+                    <div class="sync-step-num">1</div>
+                    <div>
+                      <strong style="color: var(--text-main); font-size: 0.9rem;">En iPhone (Safari):</strong>
+                      <p style="font-size: 0.825rem; color: var(--text-muted); margin-top: 2px;">
+                        Abre el enlace en Safari, toca el botón <strong>Compartir (icono con flecha arriba)</strong> y selecciona <strong>"Añadir a pantalla de inicio"</strong>. Tendrás un icono de app nativa.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div class="sync-guide-card">
+                    <div class="sync-step-num">2</div>
+                    <div>
+                      <strong style="color: var(--text-main); font-size: 0.9rem;">En Android (Google Chrome):</strong>
+                      <p style="font-size: 0.825rem; color: var(--text-muted); margin-top: 2px;">
+                        Abre el enlace en Chrome, presiona los <strong>3 puntos del menú</strong> y toca <strong>"Instalar aplicación"</strong> o "Añadir a la pantalla principal".
+                      </p>
+                    </div>
+                  </div>
+
+                  <!-- Calendar Live Subscription Feed -->
+                  <div style="background: #fdf2f4; border: 1px solid #fbcfe8; border-radius: var(--radius-md); padding: 16px; margin-top: 18px;">
+                    <h5 style="color: #9d174d; font-size: 0.9rem; font-weight: 700; margin-bottom: 6px;">
+                      📅 Sincronización en Tiempo Real con Calendario de tu Celular (Apple / Google Calendar)
+                    </h5>
+                    <p style="font-size: 0.8rem; color: #831843; margin-bottom: 10px;">
+                      Puedes suscribirte al feed de turnos en tu aplicación de Calendario del teléfono para recibir alertas nativas 1 hora antes:
+                    </p>
+                    <div style="display: flex; gap: 8px;">
+                      <input type="text" id="sync-ical-url" class="form-control" readonly style="font-size: 0.8rem; background: white;">
+                      <button class="btn btn-primary btn-sm" onclick="copyInput('sync-ical-url')">Copiar Feed</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- TAB 4: PACIENTES -->
+        <section id="tab-patients" class="tab-pane" style="display: none;">
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">
+                <input type="text" id="input-search-patients" placeholder="🔍 Buscar paciente por nombre o WhatsApp..." class="form-control" style="width: 320px;">
+              </div>
+              <button class="btn btn-primary btn-sm" id="btn-modal-new-patient">
+                + Nueva Paciente
+              </button>
+            </div>
+            <div class="card-body" style="padding: 0; overflow-x: auto;">
+              <table style="width: 100%; border-collapse: collapse; text-align: left; min-width: 600px;" id="table-patients">
+                <thead>
+                  <tr style="background: #f8fafc; border-bottom: 1px solid var(--border-color); font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase;">
+                    <th style="padding: 14px 20px;">Paciente</th>
+                    <th style="padding: 14px 20px;">WhatsApp / Teléfono</th>
+                    <th style="padding: 14px 20px;">Tipo de Piel / Alergias</th>
+                    <th style="padding: 14px 20px;">Total Citas</th>
+                    <th style="padding: 14px 20px; text-align: right;">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody id="patients-table-body">
+                  <!-- Inyectado por JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- TAB 5: TRATAMIENTOS -->
+        <section id="tab-services" class="tab-pane" style="display: none;">
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">
+                <span>Catálogo de Servicios y Tratamientos</span>
+              </div>
+              <button class="btn btn-primary btn-sm" id="btn-modal-new-service">
+                + Nuevo Tratamiento
+              </button>
+            </div>
+            <div class="card-body">
+              <div id="services-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px;">
+                <!-- Inyectado por JS -->
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- TAB 6: CONFIGURACIÓN & PLANTILLA WHATSAPP -->
+        <section id="tab-settings" class="tab-pane" style="display: none;">
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">Configuración del Centro y Plantilla de Mensaje WhatsApp</h3>
+            </div>
+            <div class="card-body">
+              <form id="form-settings">
+                <div class="form-row">
+                  <div class="form-group">
+                    <label class="form-label">Nombre del Centro de Estética</label>
+                    <input type="text" id="setting-clinic-name" class="form-control" required>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Teléfono / WhatsApp de Contacto</label>
+                    <input type="text" id="setting-clinic-phone" class="form-control" required>
+                  </div>
+                </div>
+
+                <div class="form-row">
+                  <div class="form-group">
+                    <label class="form-label">Dirección Física del Centro</label>
+                    <input type="text" id="setting-clinic-address" class="form-control" required>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Correo Electrónico</label>
+                    <input type="email" id="setting-clinic-email" class="form-control">
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">
+                    Plantilla del Mensaje de Confirmación (WhatsApp 24h antes)
+                  </label>
+                  <p style="font-size: 0.775rem; color: var(--text-muted); margin-bottom: 8px;">
+                    Variables disponibles: <code>{nombre_paciente}</code>, <code>{centro}</code>, <code>{fecha}</code>, <code>{hora}</code>, <code>{tratamiento}</code>, <code>{especialista}</code>, <code>{direccion}</code>, <code>{indicaciones}</code>, <code>{enlace_confirmacion}</code>
+                  </p>
+                  <textarea id="setting-whatsapp-template" class="form-control" rows="8"></textarea>
+                </div>
+
+                <div style="text-align: right;">
+                  <button type="submit" class="btn btn-primary">Guardar Configuración</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <!-- Mobile Bottom Navigation Bar -->
+  <nav class="mobile-nav-bar">
+    <button class="mobile-nav-btn active" data-tab="agenda">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      <span>Agenda</span>
+    </button>
+
+    <button class="mobile-nav-btn" data-tab="reminders">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+      <span>Recordatorios</span>
+    </button>
+
+    <div class="mobile-fab-center" id="mobile-btn-quick-schedule" title="Agendar Cita">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    </div>
+
+    <button class="mobile-nav-btn" data-tab="patients">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+      <span>Pacientes</span>
+    </button>
+
+    <button class="mobile-nav-btn" data-tab="sync">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+      <span>Celular</span>
+    </button>
+  </nav>
+
+  <!-- MODAL: NUEVA / EDITAR CITA -->
+  <div class="modal-backdrop" id="modal-appointment">
+    <div class="modal-container">
+      <div class="modal-header">
+        <h3 id="modal-appointment-title">Agendar Nueva Cita</h3>
+        <button class="modal-close" onclick="closeModal('modal-appointment')">✕</button>
+      </div>
+      <form id="form-appointment">
+        <input type="hidden" id="appt-id">
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">Paciente</label>
+            <div style="display: flex; gap: 8px;">
+              <select id="appt-patient-select" class="form-control" required style="flex: 1;">
+                <!-- Opciones inyectadas -->
+              </select>
+              <button type="button" class="btn btn-secondary btn-sm" id="btn-add-patient-quick">+ Crear</button>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Tratamiento / Servicio</label>
+            <select id="appt-service-select" class="form-control" required>
+              <!-- Opciones inyectadas -->
+            </select>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Fecha de la Cita</label>
+              <input type="date" id="appt-date" class="form-control" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Hora</label>
+              <input type="time" id="appt-time" class="form-control" required>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Especialista / Profesional</label>
+              <input type="text" id="appt-specialist" class="form-control" value="Cosmetóloga Constanza Díaz">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Estado Inicial</label>
+              <select id="appt-status" class="form-control">
+                <option value="Pendiente">Pendiente</option>
+                <option value="Confirmada">Confirmada</option>
+                <option value="Recordatorio Enviado">Recordatorio Enviado</option>
+                <option value="Completada">Completada</option>
+                <option value="Cancelada">Cancelada</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Notas Adicionales o Motivo de Consulta</label>
+            <textarea id="appt-notes" class="form-control" placeholder="Ej: Primera sesión, paciente solicita evaluar ojeras..."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('modal-appointment')">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Guardar Cita</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: NUEVO PACIENTE -->
+  <div class="modal-backdrop" id="modal-patient">
+    <div class="modal-container">
+      <div class="modal-header">
+        <h3>Registrar Paciente</h3>
+        <button class="modal-close" onclick="closeModal('modal-patient')">✕</button>
+      </div>
+      <form id="form-patient">
+        <input type="hidden" id="patient-id">
+        <div class="modal-body">
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Nombre Completo</label>
+              <input type="text" id="patient-name" class="form-control" placeholder="Ej. Camila Fernández" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">WhatsApp (con código país)</label>
+              <input type="text" id="patient-phone" class="form-control" placeholder="Ej. +34612345678" required>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Email</label>
+              <input type="email" id="patient-email" class="form-control" placeholder="paciente@correo.com">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Fecha de Nacimiento</label>
+              <input type="date" id="patient-birth" class="form-control">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Tipo de Piel</label>
+              <input type="text" id="patient-skin" class="form-control" placeholder="Ej. Mixta, sensible, grasa...">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Alergias o Contraindicaciones</label>
+              <input type="text" id="patient-allergies" class="form-control" placeholder="Ej. Látex, aspirina...">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Notas Estéticas y Clínicas</label>
+            <textarea id="patient-notes" class="form-control" placeholder="Observaciones de tratamientos previos..."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('modal-patient')">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Guardar Paciente</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: HISTORIAL DEL PACIENTE -->
+  <div class="modal-backdrop" id="modal-patient-history">
+    <div class="modal-container" style="max-width: 680px;">
+      <div class="modal-header">
+        <h3 id="history-patient-name">Ficha Estética del Paciente</h3>
+        <button class="modal-close" onclick="closeModal('modal-patient-history')">✕</button>
+      </div>
+      <div class="modal-body">
+        <div id="history-patient-details" style="background: #f8fafc; padding: 16px; border-radius: var(--radius-md); margin-bottom: 20px;">
+          <!-- Datos clínicos -->
+        </div>
+
+        <h4 style="font-size: 0.95rem; font-weight: 700; margin-bottom: 12px; color: var(--text-main);">Historial de Sesiones & Citas</h4>
+        <div id="history-appointments-list" class="timeline-view">
+          <!-- Historial -->
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('modal-patient-history')">Cerrar</button>
+        <button type="button" class="btn btn-primary" id="btn-schedule-from-history">+ Agendar Nueva Sesión</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: NUEVO TRATAMIENTO -->
+  <div class="modal-backdrop" id="modal-service">
+    <div class="modal-container">
+      <div class="modal-header">
+        <h3>Nuevo Tratamiento / Servicio</h3>
+        <button class="modal-close" onclick="closeModal('modal-service')">✕</button>
+      </div>
+      <form id="form-service">
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">Nombre del Tratamiento</label>
+            <input type="text" id="service-name" class="form-control" required placeholder="Ej. Radiofrecuencia Facial">
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Categoría</label>
+              <select id="service-category" class="form-control">
+                <option value="Facial">Facial</option>
+                <option value="Corporal">Corporal</option>
+                <option value="Depilación">Depilación</option>
+                <option value="Medicina Estética">Medicina Estética</option>
+                <option value="Masajes">Masajes</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Duración (minutos)</label>
+              <input type="number" id="service-duration" class="form-control" value="60" required>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Precio ($)</label>
+              <input type="number" step="0.5" id="service-price" class="form-control" value="50" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Color Distintivo</label>
+              <input type="color" id="service-color" class="form-control" value="#F472B6" style="height: 42px; padding: 2px;">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Recomendaciones e Instrucciones Previas para la Paciente</label>
+            <textarea id="service-instructions" class="form-control" placeholder="Ej. Venir con la piel limpia sin maquillaje ni exfoliantes..."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('modal-service')">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Guardar Tratamiento</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <script src="/static/js/qr.js"></script>
+  <script src="/static/js/app.js"></script>
+</body>
+</html>

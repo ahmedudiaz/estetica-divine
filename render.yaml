@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: estetica-divine-agenda
+    env: python
+    buildCommand: ""
+    startCommand: python3 server.py
+    envVars:
+      - key: PORT
+        value: 8000
