@@ -90,5 +90,64 @@ class TestGlowAuraEstetica(unittest.TestCase):
         self.assertIn("BEGIN:VEVENT", ics)
         print(f"[TEST] Feed iCalendar (.ics) generado exitosamente con {ics.count('BEGIN:VEVENT')} eventos.")
 
+    def test_patient_crud(self):
+        from database import update_patient, delete_patient, get_patient_by_id
+        # 1. Crear
+        p = create_patient({
+            "name": "Paciente Para Eliminar",
+            "phone": "+34699887766",
+            "email": "eliminar@example.com",
+            "skin_type": "Grasa",
+            "allergies": "Ninguna",
+            "notes": "Prueba temporal"
+        })
+        p_id = p["id"]
+        self.assertIsNotNone(p_id)
+
+        # 2. Actualizar
+        updated = update_patient(p_id, {"name": "Paciente Editado", "skin_type": "Mixta"})
+        self.assertEqual(updated["name"], "Paciente Editado")
+        self.assertEqual(updated["skin_type"], "Mixta")
+        print(f"[TEST] Paciente actualizado con éxito: {updated['name']}")
+
+        # 3. Eliminar
+        deleted = delete_patient(p_id)
+        self.assertTrue(deleted)
+        self.assertIsNone(get_patient_by_id(p_id))
+        print(f"[TEST] Paciente ID {p_id} eliminado con éxito.")
+
+    def test_service_crud_and_weekly_calendar(self):
+        from database import create_service, get_service_by_id, update_service, delete_service
+        # 1. Crear Tratamiento
+        svc_id = create_service({
+            "name": "Peeling Ultrasonico Test",
+            "category": "Facial",
+            "duration_minutes": 45,
+            "price": 65.0,
+            "instructions": "Sin maquillaje",
+            "color": "#10b981"
+        })
+        self.assertIsNotNone(svc_id)
+        svc = get_service_by_id(svc_id)
+        self.assertEqual(svc["name"], "Peeling Ultrasonico Test")
+
+        # 2. Actualizar Tratamiento
+        updated_svc = update_service(svc_id, {"price": 75.0, "duration_minutes": 50})
+        self.assertEqual(updated_svc["price"], 75.0)
+        self.assertEqual(updated_svc["duration_minutes"], 50)
+        print(f"[TEST] Tratamiento actualizado con éxito: {updated_svc['name']} ($ {updated_svc['price']})")
+
+        # 3. Consultar Citas en Rango Semanal para el Calendario
+        today_str = date.today().strftime("%Y-%m-%d")
+        next_week_str = (date.today() + timedelta(days=7)).strftime("%Y-%m-%d")
+        week_appts = get_appointments(date_from=today_str, date_to=next_week_str)
+        self.assertIsInstance(week_appts, list)
+        print(f"[TEST] Consulta de calendario semanal para el rango {today_str} a {next_week_str}: {len(week_appts)} citas encontradas.")
+
+        # 4. Eliminar Tratamiento
+        deleted = delete_service(svc_id)
+        self.assertTrue(deleted)
+        print(f"[TEST] Tratamiento ID {svc_id} eliminado/desactivado con éxito.")
+
 if __name__ == "__main__":
     unittest.main()

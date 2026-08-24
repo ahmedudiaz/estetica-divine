@@ -12,8 +12,8 @@ from datetime import datetime, date, timedelta
 from database import (
     init_db, get_stats, get_appointments, get_appointment_by_id,
     create_appointment, update_appointment, delete_appointment,
-    get_patients, get_patient_by_id, create_patient, update_patient,
-    get_services, create_service, update_service,
+    get_patients, get_patient_by_id, create_patient, update_patient, delete_patient,
+    get_services, get_service_by_id, create_service, update_service, delete_service,
     get_settings, update_setting, mark_reminder_sent,
     get_appointment_by_token, confirm_appointment_by_token
 )
@@ -185,6 +185,13 @@ class EsteticaRequestHandler(http.server.BaseHTTPRequestHandler):
             services = get_services()
             return self.send_json({"success": True, "data": services})
 
+        if path.startswith("/api/services/"):
+            svc_id = int(path.split("/")[-1])
+            svc = get_service_by_id(svc_id)
+            if svc:
+                return self.send_json({"success": True, "data": svc})
+            return self.send_json({"success": False, "error": "Tratamiento no encontrado"}, 404)
+
         if path == "/api/reminders/tomorrow":
             base_url = self.get_base_url()
             reminders = get_tomorrow_reminders(base_url)
@@ -312,6 +319,16 @@ class EsteticaRequestHandler(http.server.BaseHTTPRequestHandler):
         if path.startswith("/api/appointments/"):
             appt_id = int(path.split("/")[-1])
             delete_appointment(appt_id)
+            return self.send_json({"success": True})
+
+        if path.startswith("/api/patients/"):
+            patient_id = int(path.split("/")[-1])
+            delete_patient(patient_id)
+            return self.send_json({"success": True})
+
+        if path.startswith("/api/services/"):
+            svc_id = int(path.split("/")[-1])
+            delete_service(svc_id)
             return self.send_json({"success": True})
 
         self.send_error(404, "Ruta no encontrada")

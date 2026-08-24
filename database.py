@@ -485,6 +485,18 @@ def update_patient(patient_id, data):
     conn.close()
     return get_patient_by_id(patient_id)
 
+def delete_patient(patient_id):
+    conn = get_connection()
+    # Eliminar notificaciones de sus citas
+    conn.execute("DELETE FROM notification_logs WHERE patient_id = ?", (patient_id,))
+    # Eliminar citas asociadas
+    conn.execute("DELETE FROM appointments WHERE patient_id = ?", (patient_id,))
+    # Eliminar paciente
+    conn.execute("DELETE FROM patients WHERE id = ?", (patient_id,))
+    conn.commit()
+    conn.close()
+    return True
+
 def get_services(active_only=True):
     conn = get_connection()
     query = "SELECT * FROM services"
@@ -494,6 +506,12 @@ def get_services(active_only=True):
     rows = conn.execute(query).fetchall()
     conn.close()
     return [dict(r) for r in rows]
+
+def get_service_by_id(service_id):
+    conn = get_connection()
+    row = conn.execute("SELECT * FROM services WHERE id = ?", (service_id,)).fetchone()
+    conn.close()
+    return dict(row) if row else None
 
 def create_service(data):
     conn = get_connection()
@@ -527,4 +545,13 @@ def update_service(service_id, data):
         conn.execute(f"UPDATE services SET {', '.join(fields)} WHERE id = ?", values)
         conn.commit()
     conn.close()
+    return get_service_by_id(service_id)
+
+def delete_service(service_id):
+    conn = get_connection()
+    # Opcional: Desactivar en vez de borrar para preservar historial de citas anteriores
+    conn.execute("UPDATE services SET is_active = 0 WHERE id = ?", (service_id,))
+    conn.commit()
+    conn.close()
     return True
+
