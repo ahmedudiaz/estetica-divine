@@ -394,7 +394,7 @@ def mark_reminder_sent(appt_id, message_body=""):
     if appt:
         conn.execute("""
         UPDATE appointments 
-        SET status = CASE WHEN status = 'Pendiente' THEN 'Recordatorio Enviado' ELSE status END,
+        SET status = 'Recordatorio Enviado',
             reminder_sent_at = CURRENT_TIMESTAMP 
         WHERE id = ?
         """, (appt_id,))

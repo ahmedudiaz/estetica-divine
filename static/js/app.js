@@ -796,10 +796,11 @@ async function markSentAndReload(apptId) {
   try {
     await fetch(`/api/reminders/send/${apptId}`, { method: "POST" });
     showToast("Recordatorio registrado como enviado.");
+    triggerPersistentBackup();
     setTimeout(() => {
       loadStats();
       if (state.activeTab === "reminders") loadTomorrowReminders();
-    }, 1000);
+    }, 500);
   } catch (e) {
     console.error(e);
   }
@@ -811,9 +812,12 @@ async function sendIndividualReminder(apptId) {
     const json = await res.json();
     if (json.success && json.data.whatsapp_link) {
       window.open(json.data.whatsapp_link, "_blank");
-      showToast("Mensaje de WhatsApp abierto");
+      showToast("Mensaje de WhatsApp abierto y registrado");
+      triggerPersistentBackup();
       loadStats();
       loadAppointmentsForDate();
+      if (state.activeTab === "reminders") loadTomorrowReminders();
+      if (state.activeTab === "calendar") loadWeeklyCalendar();
     }
   } catch (e) {
     console.error(e);
@@ -833,7 +837,8 @@ async function sendAllPendingReminders() {
       for (const item of pending) {
         await fetch(`/api/reminders/send/${item.id}`, { method: "POST" });
       }
-      showToast(`Se prepararon ${pending.length} recordatorios.`);
+      showToast(`Se prepararon y registraron ${pending.length} recordatorios.`);
+      triggerPersistentBackup();
       loadTomorrowReminders();
       loadStats();
     }
@@ -1186,19 +1191,32 @@ async function checkAndRestorePersistedState() {
   const hasCustom = localStorage.getItem("estetica_divine_has_custom_data");
   const savedData = localStorage.getItem("estetica_divine_backup_v1");
 
-  if (hasCustom === "true" && savedData) {
-    try {
-      const parsed = JSON.parse(savedData);
-      // Enviar al servidor para restaurar la sesión si Render se reinició
-      await fetch("/api/sync/state", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(parsed)
-      });
-      console.log("✨ Estado restaurado exitosamente desde memoria local.");
-    } catch (e) {
-      console.error("Error restaurando estado:", e);
+  try {
+    const res = await fetch("/api/sync/state");
+    const json = await res.json();
+
+    if (json.success && json.data) {
+      const serverPatients = json.data.patients || [];
+      const serverAppts = json.data.appointments || [];
+
+      // Si el servidor está vacío (reinicio de Render) y el cliente tiene datos guardados:
+      if (serverPatients.length === 0 && serverAppts.length === 0 && hasCustom === "true" && savedData) {
+        const parsed = JSON.parse(savedData);
+        await fetch("/api/sync/state", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(parsed)
+        });
+        console.log("✨ Base de datos restaurada automáticamente desde la memoria del dispositivo.");
+      } else if (serverPatients.length > 0 || serverAppts.length > 0) {
+        // El servidor tiene datos reales (o confirmaciones de pacientes recibidas por WhatsApp):
+        localStorage.setItem("estetica_divine_backup_v1", JSON.stringify(json.data));
+        localStorage.setItem("estetica_divine_has_custom_data", "true");
+        console.log("🔄 Memoria local actualizada con las confirmaciones y citas más recientes del servidor.");
+      }
     }
+  } catch (e) {
+    console.warn("Sincronización inicial:", e);
   }
 }
 

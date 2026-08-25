@@ -6,6 +6,13 @@ import sys
 import unittest
 from datetime import date, timedelta
 
+import database
+# Usar base de datos aislada temporal para NO modificar la base de datos real
+TEST_DB_PATH = "/tmp/test_estetica_isolated.db"
+if os.path.exists(TEST_DB_PATH):
+    os.remove(TEST_DB_PATH)
+database.DB_PATH = TEST_DB_PATH
+
 # Importar módulos de la aplicación
 from database import (
     init_db, get_stats, get_appointments, create_appointment,
@@ -18,8 +25,13 @@ class TestGlowAuraEstetica(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        # Inicializar base de datos
+        # Inicializar base de datos de prueba
         init_db()
+
+    @classmethod
+    def tearDownClass(cls):
+        if os.path.exists(TEST_DB_PATH):
+            os.remove(TEST_DB_PATH)
 
     def test_database_and_stats(self):
         stats = get_stats()
