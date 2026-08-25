@@ -1,6 +1,7 @@
 // Estética Divine - App Logic SPA & Sincronización Móvil
 let state = {
   currentDate: new Date(),
+  calendarDate: new Date(),
   activeTab: "agenda",
   appointments: [],
   patients: [],
@@ -110,6 +111,7 @@ function switchTab(tabName) {
 
   const titles = {
     agenda: "Agenda & Turnos",
+    calendar: "Calendario Horario (Saltos de 1h)",
     reminders: "Confirmaciones 24h (WhatsApp)",
     sync: "Sincronizar con el Celular",
     patients: "Directorio de Pacientes & Fichas",
@@ -119,6 +121,7 @@ function switchTab(tabName) {
   document.getElementById("view-title").textContent = titles[tabName] || "Estética Divine";
 
   if (tabName === "agenda") loadAppointmentsForDate();
+  if (tabName === "calendar") loadWeeklyCalendar();
   if (tabName === "reminders") loadTomorrowReminders();
   if (tabName === "sync") loadNetworkInfo();
   if (tabName === "patients") loadPatients();
@@ -155,32 +158,64 @@ function initEventListeners() {
     renderAgendaAppointments();
   });
 
+  // Navegación de Semana en Calendario Horario
+  const btnPrevWeek = document.getElementById("btn-prev-week");
+  if (btnPrevWeek) {
+    btnPrevWeek.addEventListener("click", () => {
+      state.calendarDate.setDate(state.calendarDate.getDate() - 7);
+      loadWeeklyCalendar();
+    });
+  }
+
+  const btnNextWeek = document.getElementById("btn-next-week");
+  if (btnNextWeek) {
+    btnNextWeek.addEventListener("click", () => {
+      state.calendarDate.setDate(state.calendarDate.getDate() + 7);
+      loadWeeklyCalendar();
+    });
+  }
+
+  const btnCurrentWeek = document.getElementById("btn-current-week");
+  if (btnCurrentWeek) {
+    btnCurrentWeek.addEventListener("click", () => {
+      state.calendarDate = new Date();
+      loadWeeklyCalendar();
+    });
+  }
+
+  const calWeekPicker = document.getElementById("calendar-week-picker");
+  if (calWeekPicker) {
+    calWeekPicker.addEventListener("change", (e) => {
+      if (e.target.value) {
+        const parts = e.target.value.split("-");
+        state.calendarDate = new Date(parts[0], parts[1] - 1, parts[2]);
+        loadWeeklyCalendar();
+      }
+    });
+  }
+
   // Botón Agendar Cita Rápida
   document.getElementById("btn-quick-new-appointment").addEventListener("click", () => {
     openAppointmentModal();
   });
 
-  // Botones de Modales
-  document.getElementById("btn-modal-new-patient").addEventListener("click", () => {
-    document.getElementById("form-patient").reset();
-    document.getElementById("patient-id").value = "";
-    openModal("modal-patient");
+  // Botón Nuevo Paciente
+  document.getElementById("btn-new-patient").addEventListener("click", () => {
+    openPatientModal();
   });
 
-  document.getElementById("btn-add-patient-quick").addEventListener("click", () => {
-    document.getElementById("form-patient").reset();
-    document.getElementById("patient-id").value = "";
-    openModal("modal-patient");
+  // Botón Nuevo Tratamiento
+  document.getElementById("btn-new-service").addEventListener("click", () => {
+    openServiceModal();
   });
 
-  document.getElementById("btn-modal-new-service").addEventListener("click", () => {
-    document.getElementById("form-service").reset();
-    openModal("modal-service");
-  });
-
-  // Buscador de Pacientes
-  document.getElementById("input-search-patients").addEventListener("input", (e) => {
-    loadPatients(e.target.value);
+  // Búsqueda de Pacientes
+  let searchTimer;
+  document.getElementById("patient-search").addEventListener("input", (e) => {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(() => {
+      loadPatients(e.target.value);
+    }, 300);
   });
 
   // Enviar todos los recordatorios
@@ -198,7 +233,6 @@ function initEventListeners() {
       
       try {
         await fetch("/api/tunnel/start", { method: "POST" });
-        // Polling para detectar la URL pública
         let attempts = 0;
         const interval = setInterval(async () => {
           attempts++;
@@ -301,7 +335,6 @@ async function loadNetworkInfo() {
         document.getElementById("input-custom-public-url").value = json.data.public_url || "";
       }
 
-      // Actualizar Status UI
       const badge = document.getElementById("sync-status-badge");
       const statusText = document.getElementById("sync-status-text");
       const qrDesc = document.getElementById("qr-desc-text");
@@ -316,7 +349,6 @@ async function loadNetworkInfo() {
         qrDesc.textContent = "Asegúrate de que tu celular esté en la misma red Wi-Fi o presiona 'Activar Acceso por Internet'.";
       }
 
-      // Renderizar QR Code
       const qrContainer = document.getElementById("qr-code-container");
       qrContainer.innerHTML = createQRCodeSVG(effectiveUrl, 200);
     }
@@ -334,7 +366,7 @@ function copyInput(inputId) {
 }
 
 // ----------------------------------------------------
-// TAB 1: AGENDA & TURNOS
+// TAB 1: AGENDA & TURNOS (DIARIA)
 // ----------------------------------------------------
 async function loadAppointmentsForDate() {
   const dateStr = formatDateISO(state.currentDate);
@@ -420,6 +452,146 @@ function renderAgendaAppointments() {
 }
 
 // ----------------------------------------------------
+// TAB: CALENDARIO VISUAL POR HORAS (SALTOS DE 1 HORA)
+// ----------------------------------------------------
+async function loadWeeklyCalendar() {
+  const container = document.getElementById("weekly-calendar-container");
+  if (!container) return;
+
+  // Calcular Lunes de la semana seleccionada
+  const curr = new Date(state.calendarDate);
+  const dayOfWeek = curr.getDay(); // 0 = Domingo, 1 = Lunes, ...
+  const distanceToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+  const monday = new Date(curr);
+  monday.setDate(curr.getDate() + distanceToMonday);
+
+  // Generar 7 días (Lunes a Domingo)
+  const weekDays = [];
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(monday);
+    d.setDate(monday.getDate() + i);
+    weekDays.push(d);
+  }
+
+  const startDateStr = formatDateISO(weekDays[0]);
+  const endDateStr = formatDateISO(weekDays[6]);
+
+  // Actualizar display de semana
+  const monthNames = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
+  const startDay = weekDays[0].getDate();
+  const startMonth = monthNames[weekDays[0].getMonth()];
+  const endDay = weekDays[6].getDate();
+  const endMonth = monthNames[weekDays[6].getMonth()];
+  const year = weekDays[6].getFullYear();
+
+  document.getElementById("calendar-week-display").textContent = `${startDay} ${startMonth} - ${endDay} ${endMonth} ${year}`;
+  if (document.getElementById("calendar-week-picker")) {
+    document.getElementById("calendar-week-picker").value = formatDateISO(state.calendarDate);
+  }
+
+  // Cargar citas de la semana
+  try {
+    const res = await fetch(`/api/appointments?date_from=${startDateStr}&date_to=${endDateStr}`);
+    const json = await res.json();
+    const appointments = json.success ? json.data : [];
+
+    renderCalendarGrid(weekDays, appointments);
+  } catch (err) {
+    console.error("Error al cargar citas de la semana:", err);
+  }
+}
+
+function renderCalendarGrid(weekDays, appointments) {
+  const container = document.getElementById("weekly-calendar-container");
+  const dayNames = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
+  const todayISO = formatDateISO(new Date());
+
+  // Horas del día: 08:00 a 20:00 (Saltos de 1 hora)
+  const hours = [];
+  for (let h = 8; h <= 20; h++) {
+    hours.push(String(h).padStart(2, '0') + ":00");
+  }
+
+  let html = `<table class="calendar-grid-table">`;
+  
+  // Encabezado con días
+  html += `<thead><tr>`;
+  html += `<th class="time-col-header">Horario</th>`;
+  weekDays.forEach((d, idx) => {
+    const dateISO = formatDateISO(d);
+    const isToday = dateISO === todayISO;
+    html += `
+      <th class="${isToday ? 'is-today' : ''}">
+        <span class="day-name">${dayNames[idx]}</span>
+        <span class="day-number">${d.getDate()}</span>
+      </th>
+    `;
+  });
+  html += `</tr></thead><tbody>`;
+
+  // Filas por cada salto de 1 hora
+  hours.forEach(hourStr => {
+    const hourNum = parseInt(hourStr.split(":")[0]);
+    html += `<tr>`;
+    html += `<td class="time-cell-label">${hourStr}</td>`;
+
+    weekDays.forEach(d => {
+      const dateISO = formatDateISO(d);
+      
+      // Buscar citas que caigan en esta fecha y comiencen en esta hora
+      const slotAppts = appointments.filter(a => {
+        if (a.appointment_date !== dateISO) return false;
+        const apptHour = parseInt(a.appointment_time.split(":")[0]);
+        return apptHour === hourNum;
+      });
+
+      if (slotAppts.length > 0) {
+        // Celda Ocupada con Cita(s)
+        html += `<td class="time-slot-cell has-appointment">`;
+        slotAppts.forEach(appt => {
+          html += `
+            <div class="calendar-event-card" style="border-left-color: ${appt.service_color || 'var(--primary)'};" onclick="editAppointment(${appt.id})" title="Clic para ver/editar cita">
+              <div class="calendar-event-header">
+                <span class="calendar-event-time">${appt.appointment_time}</span>
+                <span class="status-dot" style="background: ${getStatusColor(appt.status)};"></span>
+              </div>
+              <div class="calendar-event-patient">${appt.patient_name}</div>
+              <div class="calendar-event-service">${appt.service_name}</div>
+              <div class="calendar-event-footer">
+                <span style="font-size: 0.65rem; color: var(--text-muted);">${appt.duration_minutes}m</span>
+                <span style="font-size: 0.65rem; font-weight: 700; color: var(--text-main);">$${appt.service_price}</span>
+              </div>
+            </div>
+          `;
+        });
+        html += `</td>`;
+      } else {
+        // Celda Libre (Clic para agendar en esa fecha y hora exacta)
+        html += `
+          <td class="time-slot-cell slot-empty" onclick="openAppointmentModal({ appointment_date: '${dateISO}', appointment_time: '${hourStr}' })" title="Hora disponible: Clic para agendar a las ${hourStr}">
+          </td>
+        `;
+      }
+    });
+
+    html += `</tr>`;
+  });
+
+  html += `</tbody></table>`;
+  container.innerHTML = html;
+}
+
+function getStatusColor(status) {
+  switch (status) {
+    case 'Confirmada': return '#10b981';
+    case 'Recordatorio Enviado': return '#3b82f6';
+    case 'Completada': return '#8b5cf6';
+    case 'Cancelada': return '#ef4444';
+    default: return '#f59e0b';
+  }
+}
+
+// ----------------------------------------------------
 // TAB 2: RECORDATORIOS 24H (WHATSAPP)
 // ----------------------------------------------------
 async function loadTomorrowReminders() {
@@ -450,52 +622,32 @@ async function loadTomorrowReminders() {
             </span>
           </div>
 
-          <div class="meta">
-            <div class="meta-item">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-              <strong>${item.appointment_time} hrs</strong> (${item.duration_minutes} min)
-            </div>
-            <div class="meta-item">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-              ${item.service_name}
-            </div>
-            <div class="meta-item">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-              ${item.patient_phone}
-            </div>
+          <div class="reminder-meta">
+            <span>📅 Mañana a las <strong>${item.appointment_time} hrs</strong></span>
+            <span>💆‍♀️ ${item.service_name} (${item.duration_minutes} min)</span>
+            <span>👩‍⚕️ ${item.specialist}</span>
           </div>
 
-          <label style="font-size: 0.775rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">
-            Vista Previa del Mensaje de WhatsApp:
-          </label>
-          <div class="message-preview-box">${item.formatted_message}</div>
+          <div class="msg-preview-box">
+            ${item.formatted_message.replace(/\n/g, '<br>')}
+          </div>
         </div>
 
-        <div class="reminder-action-panel">
-          <div>
-            <span style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 8px;">
-              ${item.reminder_sent_at ? `Último envío: ${item.reminder_sent_at.slice(11, 16)} hrs` : 'Aún no se ha enviado recordatorio'}
-            </span>
-            ${item.status === 'Confirmada' ? `
-              <div style="color: #065f46; background: #d1fae5; padding: 8px 12px; border-radius: var(--radius-sm); font-size: 0.8rem; font-weight: 600;">
-                ✅ ¡Paciente confirmó su asistencia!
-              </div>
-            ` : `
-              <div style="color: #92400e; background: #fef3c7; padding: 8px 12px; border-radius: var(--radius-sm); font-size: 0.8rem; font-weight: 600;">
-                ⏳ Esperando confirmación
-              </div>
-            `}
+        <div class="reminder-actions-col">
+          <div class="reminder-badge-whatsapp">
+            📱 WhatsApp Directo: ${item.patient_phone}
           </div>
 
-          <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 12px;">
+          <div style="display: flex; flex-direction: column; gap: 8px;">
             <a href="${item.whatsapp_link}" target="_blank" class="btn btn-whatsapp" onclick="markSentAndReload(${item.id})">
-              <span>Abrir WhatsApp Web / App</span>
+              💬 Abrir WhatsApp & Enviar
             </a>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
-              <button class="btn btn-secondary btn-sm" onclick="copyToClipboard(\`${item.formatted_message.replace(/`/g, "\\`")}\`)">
-                📋 Copiar
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+              <button class="btn btn-secondary btn-sm" onclick="copyToClipboard('${encodeURIComponent(item.formatted_message)}')">
+                📋 Copiar Texto
               </button>
-              <a href="/confirmar/${item.confirmation_token}" target="_blank" class="btn btn-secondary btn-sm" style="text-decoration: none;">
+              <a href="/confirmar/${item.confirmation_token}" target="_blank" class="btn btn-secondary btn-sm" style="text-align: center;">
                 🔗 Ver Portal
               </a>
             </div>
@@ -559,13 +711,13 @@ async function sendAllPendingReminders() {
 }
 
 function copyToClipboard(text) {
-  navigator.clipboard.writeText(text).then(() => {
+  navigator.clipboard.writeText(decodeURIComponent(text)).then(() => {
     showToast("Mensaje copiado al portapapeles ✅");
   });
 }
 
 // ----------------------------------------------------
-// TAB 3: PACIENTES & FICHAS
+// TAB 3: PACIENTES & FICHAS (CON EDITAR Y ELIMINAR)
 // ----------------------------------------------------
 async function loadPatients(search = "") {
   try {
@@ -607,15 +759,73 @@ function renderPatientsTable() {
         </span>
       </td>
       <td style="padding: 16px 20px; text-align: right; white-space: nowrap;">
-        <button class="btn btn-secondary btn-sm" onclick="viewPatientHistory(${p.id})">
+        <button class="btn btn-secondary btn-sm" onclick="viewPatientHistory(${p.id})" title="Ver ficha clínica">
           📄 Ficha
         </button>
-        <button class="btn btn-primary btn-sm" onclick="quickScheduleForPatient(${p.id})">
+        <button class="btn btn-secondary btn-sm" onclick="editPatient(${p.id})" title="Editar datos">
+          ✏️ Editar
+        </button>
+        <button class="btn btn-primary btn-sm" onclick="quickScheduleForPatient(${p.id})" title="Nueva Cita">
           + Cita
+        </button>
+        <button class="btn btn-danger btn-sm" onclick="deletePatientConfirm(${p.id}, '${p.name.replace(/'/g, "\\'")}')" title="Eliminar paciente">
+          🗑️
         </button>
       </td>
     </tr>
   `).join("");
+}
+
+function openPatientModal(initialData = null) {
+  const form = document.getElementById("form-patient");
+  form.reset();
+
+  if (initialData) {
+    document.getElementById("modal-patient-title").textContent = "Editar Datos del Paciente";
+    document.getElementById("patient-id").value = initialData.id;
+    document.getElementById("patient-name").value = initialData.name || "";
+    document.getElementById("patient-phone").value = initialData.phone || "";
+    document.getElementById("patient-email").value = initialData.email || "";
+    document.getElementById("patient-birth").value = initialData.birth_date || "";
+    document.getElementById("patient-skin").value = initialData.skin_type || "";
+    document.getElementById("patient-allergies").value = initialData.allergies || "Ninguna";
+    document.getElementById("patient-notes").value = initialData.notes || "";
+  } else {
+    document.getElementById("modal-patient-title").textContent = "Registrar Paciente";
+    document.getElementById("patient-id").value = "";
+  }
+
+  openModal("modal-patient");
+}
+
+async function editPatient(patientId) {
+  try {
+    const res = await fetch(`/api/patients/${patientId}`);
+    const json = await res.json();
+    if (json.success && json.data) {
+      openPatientModal(json.data);
+    }
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+async function deletePatientConfirm(patientId, patientName) {
+  if (confirm(`¿Estás segura de que deseas eliminar a la paciente "${patientName}"?\nSe borrarán permanentemente sus datos y citas asociadas.`)) {
+    try {
+      const res = await fetch(`/api/patients/${patientId}`, { method: "DELETE" });
+      const json = await res.json();
+      if (json.success) {
+        showToast("Paciente eliminado con éxito.");
+        await loadPatients();
+        loadStats();
+        loadAppointmentsForDate();
+        if (state.activeTab === "calendar") loadWeeklyCalendar();
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  }
 }
 
 async function viewPatientHistory(patientId) {
@@ -669,7 +879,7 @@ function quickScheduleForPatient(patientId) {
 }
 
 // ----------------------------------------------------
-// TAB 4: TRATAMIENTOS & SERVICIOS
+// TAB 4: TRATAMIENTOS & SERVICIOS (CON EDITAR Y ELIMINAR)
 // ----------------------------------------------------
 async function loadServices() {
   try {
@@ -693,7 +903,7 @@ function renderServicesGrid() {
   }
 
   container.innerHTML = state.services.map(s => `
-    <div class="card" style="border-top: 4px solid ${s.color};">
+    <div class="card" style="border-top: 4px solid ${s.color}; display: flex; flex-direction: column; justify-content: space-between;">
       <div class="card-body">
         <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
           <span class="service-tag" style="background: ${s.color}25; color: ${s.color};">
@@ -706,13 +916,71 @@ function renderServicesGrid() {
           ⏱️ Duración: <strong>${s.duration_minutes} minutos</strong>
         </p>
         ${s.instructions ? `
-          <div style="background: #fdf2f4; border-radius: var(--radius-sm); padding: 8px 10px; font-size: 0.775rem; color: #831843;">
+          <div style="background: #fdf2f4; border-radius: var(--radius-sm); padding: 8px 10px; font-size: 0.775rem; color: #831843; margin-bottom: 12px;">
             💡 <strong>Indicaciones:</strong> ${s.instructions}
           </div>
         ` : ''}
+
+        <div class="card-actions-bar">
+          <button class="btn btn-secondary btn-sm" onclick="editService(${s.id})" title="Editar tratamiento">
+            ✏️ Editar
+          </button>
+          <button class="btn btn-danger btn-sm" onclick="deleteServiceConfirm(${s.id}, '${s.name.replace(/'/g, "\\'")}')" title="Eliminar tratamiento">
+            🗑️ Eliminar
+          </button>
+        </div>
       </div>
     </div>
   `).join("");
+}
+
+function openServiceModal(initialData = null) {
+  const form = document.getElementById("form-service");
+  form.reset();
+
+  if (initialData) {
+    document.getElementById("modal-service-title").textContent = "Editar Tratamiento";
+    document.getElementById("service-id").value = initialData.id;
+    document.getElementById("service-name").value = initialData.name || "";
+    document.getElementById("service-category").value = initialData.category || "Facial";
+    document.getElementById("service-duration").value = initialData.duration_minutes || 60;
+    document.getElementById("service-price").value = initialData.price || 0;
+    document.getElementById("service-color").value = initialData.color || "#F472B6";
+    document.getElementById("service-instructions").value = initialData.instructions || "";
+  } else {
+    document.getElementById("modal-service-title").textContent = "Nuevo Tratamiento / Servicio";
+    document.getElementById("service-id").value = "";
+    document.getElementById("service-color").value = "#F472B6";
+  }
+
+  openModal("modal-service");
+}
+
+async function editService(serviceId) {
+  try {
+    const res = await fetch(`/api/services/${serviceId}`);
+    const json = await res.json();
+    if (json.success && json.data) {
+      openServiceModal(json.data);
+    }
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+async function deleteServiceConfirm(serviceId, serviceName) {
+  if (confirm(`¿Estás segura de que deseas eliminar el tratamiento "${serviceName}" del catálogo?`)) {
+    try {
+      const res = await fetch(`/api/services/${serviceId}`, { method: "DELETE" });
+      const json = await res.json();
+      if (json.success) {
+        showToast("Tratamiento eliminado del catálogo.");
+        loadServices();
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  }
 }
 
 // ----------------------------------------------------
@@ -760,32 +1028,32 @@ async function handleSettingsSubmit(e) {
 }
 
 // ----------------------------------------------------
-// MODALES & FORMULARIOS
+// HELPERS & MODALS
 // ----------------------------------------------------
-function openModal(id) {
-  document.getElementById(id).classList.add("active");
-}
-
-function closeModal(id) {
-  document.getElementById(id).classList.remove("active");
-}
-
 function populatePatientSelect() {
-  const sel = document.getElementById("appt-patient-select");
-  sel.innerHTML = state.patients.map(p => `
-    <option value="${p.id}">${p.name} (${p.phone})</option>
-  `).join("");
+  const select = document.getElementById("appt-patient-select");
+  select.innerHTML = '<option value="">-- Selecciona un Paciente --</option>' +
+    state.patients.map(p => `<option value="${p.id}">${p.name} (${p.phone})</option>`).join("");
 }
 
 function populateServiceSelect() {
-  const sel = document.getElementById("appt-service-select");
-  sel.innerHTML = state.services.map(s => `
-    <option value="${s.id}">${s.name} - $${s.price} (${s.duration_minutes} min)</option>
-  `).join("");
+  const select = document.getElementById("appt-service-select");
+  select.innerHTML = '<option value="">-- Selecciona un Tratamiento --</option>' +
+    state.services.map(s => `<option value="${s.id}">${s.name} - $${s.price} (${s.duration_minutes} min)</option>`).join("");
+}
+
+function openModal(modalId) {
+  document.getElementById(modalId).classList.add("active");
+}
+
+function closeModal(modalId) {
+  document.getElementById(modalId).classList.remove("active");
 }
 
 function openAppointmentModal(initialData = {}) {
-  document.getElementById("form-appointment").reset();
+  const form = document.getElementById("form-appointment");
+  form.reset();
+
   document.getElementById("appt-id").value = initialData.id || "";
   document.getElementById("modal-appointment-title").textContent = initialData.id ? "Editar Cita" : "Agendar Nueva Cita";
 
@@ -824,6 +1092,7 @@ async function deleteAppointmentConfirm(apptId) {
       await fetch(`/api/appointments/${apptId}`, { method: "DELETE" });
       showToast("Cita eliminada.");
       loadAppointmentsForDate();
+      if (state.activeTab === "calendar") loadWeeklyCalendar();
       loadStats();
     } catch (e) {
       console.error(e);
@@ -856,8 +1125,9 @@ async function handleAppointmentSubmit(e) {
     const json = await res.json();
     if (json.success) {
       closeModal("modal-appointment");
-      showToast(id ? "Cita actualizada correctamente" : "Cita agendada con éxito ✨");
+      showToast(id ? "Cita actualizada correctamente ✨" : "Cita agendada con éxito ✨");
       loadAppointmentsForDate();
+      if (state.activeTab === "calendar") loadWeeklyCalendar();
       loadStats();
     }
   } catch (err) {
@@ -890,7 +1160,7 @@ async function handlePatientSubmit(e) {
     const json = await res.json();
     if (json.success) {
       closeModal("modal-patient");
-      showToast("Paciente registrado con éxito.");
+      showToast(id ? "Paciente actualizado correctamente ✨" : "Paciente registrado con éxito ✨");
       await loadPatients();
       loadStats();
     }
@@ -901,6 +1171,7 @@ async function handlePatientSubmit(e) {
 
 async function handleServiceSubmit(e) {
   e.preventDefault();
+  const id = document.getElementById("service-id").value;
   const payload = {
     name: document.getElementById("service-name").value,
     category: document.getElementById("service-category").value,
@@ -910,16 +1181,19 @@ async function handleServiceSubmit(e) {
     instructions: document.getElementById("service-instructions").value
   };
 
+  const url = id ? `/api/services/${id}` : "/api/services";
+  const method = id ? "PUT" : "POST";
+
   try {
-    const res = await fetch("/api/services", {
-      method: "POST",
+    const res = await fetch(url, {
+      method,
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload)
     });
     const json = await res.json();
     if (json.success) {
       closeModal("modal-service");
-      showToast("Tratamiento agregado al catálogo ✨");
+      showToast(id ? "Tratamiento actualizado correctamente ✨" : "Tratamiento agregado al catálogo ✨");
       loadServices();
     }
   } catch (err) {

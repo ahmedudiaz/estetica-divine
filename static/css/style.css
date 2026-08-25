@@ -984,3 +984,195 @@ textarea.form-control {
     padding: 0;
   }
 }
+
+/* ====================================================
+   CALENDARIO VISUAL POR HORAS (SALTOS DE 1 HORA)
+   ==================================================== */
+.calendar-wrapper {
+  overflow-x: auto;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-subtle);
+  background: white;
+  box-shadow: var(--shadow-sm);
+}
+
+.calendar-grid-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 880px;
+  table-layout: fixed;
+}
+
+.calendar-grid-table th,
+.calendar-grid-table td {
+  border: 1px solid var(--border-color);
+  padding: 0;
+  vertical-align: top;
+}
+
+.calendar-grid-table th {
+  background: #fafbfc;
+  padding: 12px 8px;
+  text-align: center;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-main);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.calendar-grid-table th.time-col-header {
+  width: 75px;
+  background: #f1f5f9;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+}
+
+.calendar-grid-table th.is-today {
+  background: #fdf2f4;
+  color: var(--primary);
+  border-bottom: 3px solid var(--primary);
+}
+
+.calendar-grid-table th .day-name {
+  display: block;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  letter-spacing: 0.05em;
+}
+
+.calendar-grid-table th.is-today .day-name {
+  color: var(--primary);
+  font-weight: 700;
+}
+
+.calendar-grid-table th .day-number {
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.time-cell-label {
+  padding: 10px 4px;
+  text-align: center;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: #fafbfc;
+  height: 90px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.time-slot-cell {
+  height: 90px;
+  position: relative;
+  transition: background 0.15s;
+  padding: 4px;
+  box-sizing: border-box;
+}
+
+.time-slot-cell.slot-empty {
+  cursor: pointer;
+  background: #ffffff;
+}
+
+.time-slot-cell.slot-empty:hover {
+  background: #fdf2f4;
+}
+
+.time-slot-cell.slot-empty:hover::after {
+  content: '+ Agendar';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--primary);
+  background: rgba(255, 255, 255, 0.9);
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-sm);
+  pointer-events: none;
+}
+
+.time-slot-cell.is-past {
+  background: #fafafa;
+}
+
+/* Tarjeta de Cita en el Calendario */
+.calendar-event-card {
+  background: #ffffff;
+  border-radius: var(--radius-sm);
+  padding: 6px 8px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
+  border-left: 4px solid var(--primary);
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+  overflow: hidden;
+}
+
+.calendar-event-card:hover {
+  transform: scale(1.02);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
+  z-index: 5;
+}
+
+.calendar-event-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+  margin-bottom: 2px;
+}
+
+.calendar-event-time {
+  font-size: 0.725rem;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.calendar-event-patient {
+  font-size: 0.775rem;
+  font-weight: 700;
+  color: var(--text-main);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.calendar-event-service {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.calendar-event-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 2px;
+}
+
+/* Acciones en Tarjetas de Servicios y Pacientes */
+.card-actions-bar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border-color);
+}
+
