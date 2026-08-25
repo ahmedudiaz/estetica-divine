@@ -937,51 +937,162 @@ textarea.form-control {
   justify-content: center;
   font-weight: 700;
   font-size: 0.85rem;
-  flex-shrink: 0;
-}
-
-/* Responsive */
+/* Responsive Media Queries */
 @media (max-width: 900px) {
   body {
-    padding-bottom: 74px;
+    padding-bottom: calc(72px + env(safe-area-inset-bottom, 16px));
   }
   .sidebar {
     display: none;
   }
   .mobile-nav-bar {
     display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: calc(60px + env(safe-area-inset-bottom, 12px));
+    padding-bottom: env(safe-area-inset-bottom, 10px);
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-top: 1px solid var(--border-subtle);
+    z-index: 100;
+    justify-content: space-around;
+    align-items: center;
+    box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.04);
+  }
+  .mobile-nav-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-size: 0.72rem;
+    font-weight: 500;
+    padding: 6px 10px;
+    gap: 3px;
+    cursor: pointer;
+    flex: 1;
+    min-height: 48px;
+  }
+  .mobile-nav-btn svg {
+    width: 22px;
+    height: 22px;
+  }
+  .mobile-nav-btn.active {
+    color: var(--primary);
+    font-weight: 700;
+  }
+  .mobile-nav-btn.active svg {
+    stroke: var(--primary);
+    stroke-width: 2.3;
   }
   .top-header {
-    padding: 0 16px;
-    height: 64px;
+    padding: 10px 14px;
+    height: auto;
+    min-height: 56px;
+    gap: 8px;
+  }
+  .header-title h2 {
+    font-size: 1.15rem;
+  }
+  .header-title p {
+    font-size: 0.75rem;
+  }
+  .header-actions #btn-header-sync {
+    display: none; /* Accessible from bottom bar */
   }
   .content-body {
-    padding: 16px 14px;
+    padding: 12px 10px;
+  }
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  .stat-card {
+    padding: 12px 14px;
+  }
+  .stat-icon {
+    width: 38px;
+    height: 38px;
+  }
+  .stat-info h3 {
+    font-size: 1.25rem;
+  }
+  .stat-info p {
+    font-size: 0.72rem;
   }
   .reminder-card {
     grid-template-columns: 1fr;
+    gap: 14px;
+    padding: 16px;
   }
   .form-row {
     grid-template-columns: 1fr;
     gap: 0;
   }
+  .form-control, input, select, textarea {
+    font-size: 16px !important; /* Prevents auto-zoom on iOS */
+    padding: 10px 12px;
+  }
   .appointment-row {
     flex-direction: column;
     align-items: flex-start;
     gap: 12px;
+    padding: 14px;
   }
   .appt-actions {
     width: 100%;
     justify-content: flex-start;
+    flex-wrap: wrap;
   }
   .modal-container {
-    max-height: 95vh;
+    max-height: 92vh;
     border-radius: var(--radius-lg) var(--radius-lg) 0 0;
     margin-top: auto;
+    padding-bottom: max(16px, env(safe-area-inset-bottom));
   }
   .modal-backdrop {
     align-items: flex-end;
     padding: 0;
+  }
+
+  /* Transformación de Tabla de Pacientes a Tarjetas Móviles */
+  #table-patients thead {
+    display: none;
+  }
+  #patients-table-body {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 10px;
+  }
+  #patients-table-body tr {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 14px;
+    background: white;
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+  }
+  #patients-table-body td {
+    padding: 0 !important;
+    border: none !important;
+  }
+  #patients-table-body td:last-child {
+    display: flex;
+    gap: 6px;
+    margin-top: 6px;
+    padding-top: 10px !important;
+    border-top: 1px solid var(--border-color) !important;
+    justify-content: flex-end;
+    flex-wrap: wrap;
   }
 }
 
@@ -994,12 +1105,191 @@ textarea.form-control {
   border: 1px solid var(--border-subtle);
   background: white;
   box-shadow: var(--shadow-sm);
+  -webkit-overflow-scrolling: touch;
 }
 
+/* Selector de Días Móvil (Pills Horizontales) */
+.mobile-day-pills-container {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 4px 2px 8px 2px;
+  width: 100%;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.mobile-day-pills-container::-webkit-scrollbar {
+  display: none;
+}
+
+.day-pill {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 14px;
+  border-radius: var(--radius-md);
+  background: #f8fafc;
+  border: 1px solid var(--border-subtle);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 58px;
+}
+
+.day-pill .pill-day-name {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.day-pill .pill-day-number {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin-top: 1px;
+}
+
+.day-pill .pill-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: transparent;
+  margin-top: 3px;
+}
+
+.day-pill.has-appts .pill-dot {
+  background: var(--primary);
+}
+
+.day-pill.active {
+  background: var(--primary-gradient);
+  border-color: var(--primary);
+  box-shadow: 0 4px 10px rgba(201, 122, 142, 0.35);
+}
+
+.day-pill.active .pill-day-name,
+.day-pill.active .pill-day-number {
+  color: white;
+}
+
+.day-pill.active .pill-dot {
+  background: white;
+}
+
+/* View Mode Switcher */
+.calendar-view-toggle {
+  display: inline-flex;
+  background: #f1f5f9;
+  padding: 3px;
+  border-radius: var(--radius-sm);
+}
+
+.btn-view-mode {
+  border: none;
+  background: transparent;
+  padding: 5px 10px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.btn-view-mode.active {
+  background: white;
+  color: var(--text-main);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Vista Diaria Vertical (Ideal para Móvil) */
+.mobile-day-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.timeline-hour-block {
+  display: grid;
+  grid-template-columns: 68px 1fr;
+  gap: 10px;
+  align-items: stretch;
+}
+
+.timeline-hour-label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #f8fafc;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle);
+  padding: 8px 4px;
+}
+
+.timeline-hour-label .time-start {
+  font-size: 0.825rem;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.timeline-hour-label .time-end {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+}
+
+.timeline-slot-content {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 52px;
+}
+
+.timeline-slot-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #ffffff;
+  border: 1px dashed var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 10px;
+  cursor: pointer;
+  transition: all 0.15s;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  font-weight: 600;
+  min-height: 52px;
+}
+
+.timeline-slot-empty:hover,
+.timeline-slot-empty:active {
+  background: #fdf2f4;
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.timeline-slot-card {
+  background: #ffffff;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-color);
+  border-left: 5px solid var(--primary);
+  padding: 10px 12px;
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+  transition: transform 0.15s;
+}
+
+.timeline-slot-card:active {
+  transform: scale(0.98);
+}
+
+/* Tabla Semanal */
 .calendar-grid-table {
   width: 100%;
   border-collapse: collapse;
-  min-width: 880px;
+  min-width: 760px;
   table-layout: fixed;
 }
 
@@ -1012,9 +1302,9 @@ textarea.form-control {
 
 .calendar-grid-table th {
   background: #fafbfc;
-  padding: 12px 8px;
+  padding: 10px 4px;
   text-align: center;
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   font-weight: 700;
   color: var(--text-main);
   position: sticky;
@@ -1023,10 +1313,10 @@ textarea.form-control {
 }
 
 .calendar-grid-table th.time-col-header {
-  width: 75px;
+  width: 65px;
   background: #f1f5f9;
   color: var(--text-muted);
-  font-size: 0.75rem;
+  font-size: 0.72rem;
 }
 
 .calendar-grid-table th.is-today {
@@ -1037,10 +1327,9 @@ textarea.form-control {
 
 .calendar-grid-table th .day-name {
   display: block;
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   text-transform: uppercase;
   color: var(--text-muted);
-  letter-spacing: 0.05em;
 }
 
 .calendar-grid-table th.is-today .day-name {
@@ -1049,18 +1338,18 @@ textarea.form-control {
 }
 
 .calendar-grid-table th .day-number {
-  font-size: 1.1rem;
+  font-size: 1rem;
   font-weight: 700;
 }
 
 .time-cell-label {
   padding: 10px 4px;
   text-align: center;
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   font-weight: 600;
   color: var(--text-muted);
   background: #fafbfc;
-  height: 90px;
+  height: 84px;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
@@ -1069,10 +1358,10 @@ textarea.form-control {
 }
 
 .time-slot-cell {
-  height: 90px;
+  height: 84px;
   position: relative;
   transition: background 0.15s;
-  padding: 4px;
+  padding: 3px;
   box-sizing: border-box;
 }
 
@@ -1086,44 +1375,35 @@ textarea.form-control {
 }
 
 .time-slot-cell.slot-empty:hover::after {
-  content: '+ Agendar';
+  content: '+';
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  font-size: 0.75rem;
+  font-size: 1.1rem;
   font-weight: 700;
   color: var(--primary);
-  background: rgba(255, 255, 255, 0.9);
-  padding: 4px 8px;
-  border-radius: var(--radius-sm);
-  box-shadow: var(--shadow-sm);
   pointer-events: none;
 }
 
-.time-slot-cell.is-past {
-  background: #fafafa;
-}
-
-/* Tarjeta de Cita en el Calendario */
+/* Tarjeta de Cita en la Celda Semanal */
 .calendar-event-card {
   background: #ffffff;
   border-radius: var(--radius-sm);
-  padding: 6px 8px;
+  padding: 5px 6px;
   height: 100%;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
-  border-left: 4px solid var(--primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  border-left: 3px solid var(--primary);
   cursor: pointer;
-  transition: transform 0.15s, box-shadow 0.15s;
+  transition: transform 0.15s;
   overflow: hidden;
 }
 
 .calendar-event-card:hover {
   transform: scale(1.02);
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
   z-index: 5;
 }
 
@@ -1131,18 +1411,17 @@ textarea.form-control {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 4px;
-  margin-bottom: 2px;
+  gap: 2px;
 }
 
 .calendar-event-time {
-  font-size: 0.725rem;
+  font-size: 0.7rem;
   font-weight: 700;
   color: var(--text-main);
 }
 
 .calendar-event-patient {
-  font-size: 0.775rem;
+  font-size: 0.75rem;
   font-weight: 700;
   color: var(--text-main);
   white-space: nowrap;
@@ -1151,7 +1430,7 @@ textarea.form-control {
 }
 
 .calendar-event-service {
-  font-size: 0.7rem;
+  font-size: 0.675rem;
   color: var(--text-muted);
   white-space: nowrap;
   overflow: hidden;
@@ -1162,7 +1441,6 @@ textarea.form-control {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-top: 2px;
 }
 
 /* Acciones en Tarjetas de Servicios y Pacientes */
@@ -1175,4 +1453,5 @@ textarea.form-control {
   padding-top: 10px;
   border-top: 1px solid var(--border-color);
 }
+
 

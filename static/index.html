@@ -173,33 +173,31 @@
         <!-- TAB: CALENDARIO VISUAL POR HORAS (1H) -->
         <section id="tab-calendar" class="tab-pane" style="display: none;">
           <div class="card">
-            <div class="card-header">
-              <div class="date-navigation">
-                <button class="btn btn-secondary btn-sm" id="btn-prev-week">◀ Semana Anterior</button>
+            <div class="card-header" style="gap: 10px;">
+              <div class="date-navigation" style="width: 100%; justify-content: space-between;">
+                <button class="btn btn-secondary btn-sm" id="btn-prev-week">◀</button>
                 <button class="btn btn-secondary btn-sm" id="btn-current-week">Esta Semana</button>
-                <button class="btn btn-secondary btn-sm" id="btn-next-week">Semana Siguiente ▶</button>
-                <span class="current-date-label" id="calendar-week-display" style="min-width: 260px;">Cargando semana...</span>
+                <button class="btn btn-secondary btn-sm" id="btn-next-week">▶</button>
+                <span class="current-date-label" id="calendar-week-display" style="min-width: 180px; font-size: 0.95rem;">Cargando semana...</span>
               </div>
 
-              <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-                <input type="date" id="calendar-week-picker" class="form-control" style="padding: 6px 12px; font-size: 0.85rem; width: auto;">
+              <!-- Selector de Días Móvil (Pills) -->
+              <div class="mobile-day-pills-container" id="calendar-mobile-day-pills">
+                <!-- Pills de Lunes a Domingo inyectadas por JS -->
+              </div>
+
+              <div class="calendar-top-actions" style="display: flex; gap: 8px; align-items: center; justify-content: space-between; width: 100%; flex-wrap: wrap;">
+                <div class="calendar-view-toggle">
+                  <button class="btn btn-sm btn-view-mode active" id="btn-view-day" onclick="setCalendarMobileView('day')">📱 Vista Día</button>
+                  <button class="btn btn-sm btn-view-mode" id="btn-view-week" onclick="setCalendarMobileView('week')">📅 Vista Semana</button>
+                </div>
                 <button class="btn btn-primary btn-sm" onclick="openAppointmentModal()">+ Nueva Cita</button>
               </div>
             </div>
 
-            <div class="card-body" style="padding: 16px;">
-              <div style="margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
-                <span style="font-size: 0.8rem; color: var(--text-muted);">
-                  💡 <strong>Tip:</strong> Haz clic en cualquier celda horaria libre (ej. 10:00, 14:00) para agendar un turno en esa hora exacta.
-                </span>
-                <div style="display: flex; gap: 12px; font-size: 0.75rem; color: var(--text-muted);">
-                  <span style="display: flex; align-items: center; gap: 4px;"><span style="width: 10px; height: 10px; border-radius: 2px; background: #ffffff; border: 1px solid #cbd5e1; display: inline-block;"></span> Libre</span>
-                  <span style="display: flex; align-items: center; gap: 4px;"><span style="width: 10px; height: 10px; border-radius: 2px; background: var(--primary); display: inline-block;"></span> Ocupada</span>
-                </div>
-              </div>
-
+            <div class="card-body" style="padding: 12px;">
               <div id="weekly-calendar-container" class="calendar-wrapper">
-                <!-- Tabla del Calendario generada dinámicamente por JS -->
+                <!-- Contenido generado dinámicamente por JS (Día o Semana) -->
               </div>
             </div>
           </div>
@@ -336,16 +334,16 @@
         <!-- TAB 4: PACIENTES -->
         <section id="tab-patients" class="tab-pane" style="display: none;">
           <div class="card">
-            <div class="card-header">
-              <div class="card-title">
-                <input type="text" id="input-search-patients" placeholder="🔍 Buscar paciente por nombre o WhatsApp..." class="form-control" style="width: 320px;">
+            <div class="card-header" style="flex-wrap: wrap; gap: 10px;">
+              <div class="card-title" style="flex: 1; min-width: 200px;">
+                <input type="text" id="patient-search" placeholder="🔍 Buscar paciente por nombre o WhatsApp..." class="form-control" style="width: 100%; max-width: 340px;">
               </div>
-              <button class="btn btn-primary btn-sm" id="btn-modal-new-patient">
+              <button class="btn btn-primary btn-sm" id="btn-new-patient">
                 + Nueva Paciente
               </button>
             </div>
             <div class="card-body" style="padding: 0; overflow-x: auto;">
-              <table style="width: 100%; border-collapse: collapse; text-align: left; min-width: 600px;" id="table-patients">
+              <table style="width: 100%; border-collapse: collapse; text-align: left;" id="table-patients">
                 <thead>
                   <tr style="background: #f8fafc; border-bottom: 1px solid var(--border-color); font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase;">
                     <th style="padding: 14px 20px;">Paciente</th>
@@ -366,11 +364,11 @@
         <!-- TAB 5: TRATAMIENTOS -->
         <section id="tab-services" class="tab-pane" style="display: none;">
           <div class="card">
-            <div class="card-header">
+            <div class="card-header" style="flex-wrap: wrap; gap: 10px;">
               <div class="card-title">
-                <span>Catálogo de Servicios y Tratamientos</span>
+                <span>Catálogo de Tratamientos</span>
               </div>
-              <button class="btn btn-primary btn-sm" id="btn-modal-new-service">
+              <button class="btn btn-primary btn-sm" id="btn-new-service">
                 + Nuevo Tratamiento
               </button>
             </div>

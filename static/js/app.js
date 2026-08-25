@@ -454,6 +454,24 @@ function renderAgendaAppointments() {
 // ----------------------------------------------------
 // TAB: CALENDARIO VISUAL POR HORAS (SALTOS DE 1 HORA)
 // ----------------------------------------------------
+state.calendarMobileView = (window.innerWidth <= 768) ? "day" : "week";
+
+function setCalendarMobileView(mode) {
+  state.calendarMobileView = mode;
+  const btnDay = document.getElementById("btn-view-day");
+  const btnWeek = document.getElementById("btn-view-week");
+  if (btnDay && btnWeek) {
+    if (mode === "day") {
+      btnDay.classList.add("active");
+      btnWeek.classList.remove("active");
+    } else {
+      btnWeek.classList.add("active");
+      btnDay.classList.remove("active");
+    }
+  }
+  loadWeeklyCalendar();
+}
+
 async function loadWeeklyCalendar() {
   const container = document.getElementById("weekly-calendar-container");
   if (!container) return;
@@ -495,10 +513,123 @@ async function loadWeeklyCalendar() {
     const json = await res.json();
     const appointments = json.success ? json.data : [];
 
-    renderCalendarGrid(weekDays, appointments);
+    // Renderizar Day Pills para selector móvil
+    renderMobileDayPills(weekDays, appointments);
+
+    if (state.calendarMobileView === "day") {
+      renderMobileDayTimeline(state.calendarDate, appointments);
+    } else {
+      renderCalendarGrid(weekDays, appointments);
+    }
   } catch (err) {
     console.error("Error al cargar citas de la semana:", err);
   }
+}
+
+function renderMobileDayPills(weekDays, appointments) {
+  const pillsContainer = document.getElementById("calendar-mobile-day-pills");
+  if (!pillsContainer) return;
+
+  const dayNames = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
+  const selectedDateISO = formatDateISO(state.calendarDate);
+
+  pillsContainer.innerHTML = weekDays.map((d, idx) => {
+    const dateISO = formatDateISO(d);
+    const isSelected = dateISO === selectedDateISO;
+    const hasAppts = appointments.some(a => a.appointment_date === dateISO);
+
+    return `
+      <div class="day-pill ${isSelected ? 'active' : ''} ${hasAppts ? 'has-appts' : ''}" onclick="selectCalendarDay('${dateISO}')">
+        <span class="pill-day-name">${dayNames[idx]}</span>
+        <span class="pill-day-number">${d.getDate()}</span>
+        <span class="pill-dot"></span>
+      </div>
+    `;
+  }).join("");
+}
+
+function selectCalendarDay(dateISO) {
+  const parts = dateISO.split("-");
+  state.calendarDate = new Date(parts[0], parts[1] - 1, parts[2]);
+  loadWeeklyCalendar();
+}
+
+function renderMobileDayTimeline(selectedDate, appointments) {
+  const container = document.getElementById("weekly-calendar-container");
+  const dateISO = formatDateISO(selectedDate);
+  const dayOptions = { weekday: 'long', day: 'numeric', month: 'long' };
+  const dayNameStr = selectedDate.toLocaleDateString('es-ES', dayOptions);
+
+  const hours = [];
+  for (let h = 8; h <= 20; h++) {
+    hours.push(String(h).padStart(2, '0') + ":00");
+  }
+
+  let html = `
+    <div style="margin-bottom: 14px; padding: 4px 8px; display: flex; align-items: center; justify-content: space-between;">
+      <h4 style="font-size: 0.95rem; font-weight: 700; color: var(--text-main); text-transform: capitalize;">
+        📅 ${dayNameStr}
+      </h4>
+      <span style="font-size: 0.75rem; color: var(--text-muted);">Horarios de 1h</span>
+    </div>
+    <div class="mobile-day-timeline">
+  `;
+
+  hours.forEach((hourStr, idx) => {
+    const hourNum = parseInt(hourStr.split(":")[0]);
+    const nextHourStr = String(hourNum + 1).padStart(2, '0') + ":00";
+
+    const slotAppts = appointments.filter(a => {
+      if (a.appointment_date !== dateISO) return false;
+      const apptHour = parseInt(a.appointment_time.split(":")[0]);
+      return apptHour === hourNum;
+    });
+
+    html += `
+      <div class="timeline-hour-block">
+        <div class="timeline-hour-label">
+          <span class="time-start">${hourStr}</span>
+          <span class="time-end">${nextHourStr}</span>
+        </div>
+        <div class="timeline-slot-content">
+    `;
+
+    if (slotAppts.length > 0) {
+      slotAppts.forEach(appt => {
+        html += `
+          <div class="timeline-slot-card" style="border-left-color: ${appt.service_color || 'var(--primary)'};" onclick="editAppointment(${appt.id})">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+              <span style="font-size: 0.85rem; font-weight: 700; color: var(--text-main);">${appt.patient_name}</span>
+              <span class="status-badge status-${appt.status.replace(/\s+/g, '.')}" style="font-size: 0.68rem; padding: 2px 8px;">
+                ${appt.status}
+              </span>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.775rem; color: var(--text-muted);">
+              <span>💆‍♀️ ${appt.service_name}</span>
+              <span style="font-weight: 600; color: var(--text-main);">$${appt.service_price}</span>
+            </div>
+            <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 3px;">
+              ⏰ ${appt.appointment_time} hrs (${appt.duration_minutes} min) • 👩‍⚕️ ${appt.specialist}
+            </div>
+          </div>
+        `;
+      });
+    } else {
+      html += `
+        <div class="timeline-slot-empty" onclick="openAppointmentModal({ appointment_date: '${dateISO}', appointment_time: '${hourStr}' })">
+          <span>+ ${hourStr} Libre (Toca para agendar)</span>
+        </div>
+      `;
+    }
+
+    html += `
+        </div>
+      </div>
+    `;
+  });
+
+  html += `</div>`;
+  container.innerHTML = html;
 }
 
 function renderCalendarGrid(weekDays, appointments) {
