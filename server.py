@@ -15,7 +15,8 @@ from database import (
     get_patients, get_patient_by_id, create_patient, update_patient, delete_patient,
     get_services, get_service_by_id, create_service, update_service, delete_service,
     get_settings, update_setting, mark_reminder_sent,
-    get_appointment_by_token, confirm_appointment_by_token
+    get_appointment_by_token, confirm_appointment_by_token,
+    export_full_state, import_full_state
 )
 from scheduler import get_tomorrow_reminders, generate_reminder_message, generate_whatsapp_link
 from calendar_sync import get_local_ip, generate_ics_feed
@@ -220,6 +221,10 @@ class EsteticaRequestHandler(http.server.BaseHTTPRequestHandler):
             settings = get_settings()
             return self.send_json({"success": True, "data": settings})
 
+        if path == "/api/sync/state":
+            state = export_full_state()
+            return self.send_json({"success": True, "data": state})
+
         # Si no coincide
         self.send_error(404, "Ruta no encontrada")
 
@@ -227,6 +232,12 @@ class EsteticaRequestHandler(http.server.BaseHTTPRequestHandler):
         parsed_url = urllib.parse.urlparse(self.path)
         path = parsed_url.path
         body = self.parse_body_json()
+
+        if path == "/api/sync/state":
+            if not body or not isinstance(body, dict):
+                return self.send_json({"success": False, "error": "Datos de sincronización inválidos"}, 400)
+            import_full_state(body)
+            return self.send_json({"success": True, "message": "Datos sincronizados correctamente"})
 
         if path == "/api/appointments":
             if not body.get("patient_id") or not body.get("service_id") or not body.get("appointment_date") or not body.get("appointment_time"):

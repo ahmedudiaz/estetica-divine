@@ -426,6 +426,30 @@
               </form>
             </div>
           </div>
+
+          <!-- Backup & Data Persistence Card -->
+          <div class="card" style="margin-top: 20px; border-left: 4px solid var(--secondary);">
+            <div class="card-header">
+              <h3 class="card-title">💾 Respaldo y Persistencia de Datos</h3>
+            </div>
+            <div class="card-body">
+              <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 16px;">
+                Tus datos se guardan de forma segura y automática en tu celular/navegador. Puedes descargar una copia de seguridad en cualquier momento o restaurarla si cambias de dispositivo.
+              </p>
+              <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+                <button type="button" class="btn btn-secondary btn-sm" id="btn-download-backup" onclick="downloadBackupJSON()">
+                  📥 Descargar Copia de Seguridad (.json)
+                </button>
+                <label class="btn btn-secondary btn-sm" style="cursor: pointer; margin-bottom: 0;">
+                  📤 Restaurar Copia (.json)
+                  <input type="file" id="input-restore-backup" accept=".json" style="display: none;" onchange="restoreBackupJSON(event)">
+                </label>
+                <button type="button" class="btn btn-danger btn-sm" onclick="clearSampleDemoData()">
+                  🧹 Borrar Datos de Ejemplo (Iniciar en Limpio)
+                </button>
+              </div>
+            </div>
+          </div>
         </section>
       </div>
     </main>

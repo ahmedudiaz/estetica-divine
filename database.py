@@ -549,9 +549,82 @@ def update_service(service_id, data):
 
 def delete_service(service_id):
     conn = get_connection()
-    # Opcional: Desactivar en vez de borrar para preservar historial de citas anteriores
     conn.execute("UPDATE services SET is_active = 0 WHERE id = ?", (service_id,))
     conn.commit()
     conn.close()
     return True
+
+def export_full_state():
+    conn = get_connection()
+    patients = [dict(r) for r in conn.execute("SELECT * FROM patients").fetchall()]
+    services = [dict(r) for r in conn.execute("SELECT * FROM services").fetchall()]
+    appointments = [dict(r) for r in conn.execute("SELECT * FROM appointments").fetchall()]
+    settings = {r["key"]: r["value"] for r in conn.execute("SELECT * FROM settings").fetchall()}
+    conn.close()
+    return {
+        "version": "1.0",
+        "exported_at": datetime.now().isoformat(),
+        "patients": patients,
+        "services": services,
+        "appointments": appointments,
+        "settings": settings
+    }
+
+def import_full_state(data):
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    if "patients" in data and isinstance(data["patients"], list):
+        cursor.execute("DELETE FROM notification_logs")
+        cursor.execute("DELETE FROM appointments")
+        cursor.execute("DELETE FROM patients")
+        for p in data["patients"]:
+            cursor.execute("""
+            INSERT OR REPLACE INTO patients (id, name, phone, email, birth_date, allergies, skin_type, notes, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (
+                p.get("id"), p.get("name"), p.get("phone"), p.get("email"),
+                p.get("birth_date"), p.get("allergies"), p.get("skin_type"),
+                p.get("notes"), p.get("created_at")
+            ))
+
+    if "services" in data and isinstance(data["services"], list):
+        cursor.execute("DELETE FROM services")
+        for s in data["services"]:
+            cursor.execute("""
+            INSERT OR REPLACE INTO services (id, name, category, duration_minutes, price, instructions, color, is_active)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """, (
+                s.get("id"), s.get("name"), s.get("category", "General"),
+                s.get("duration_minutes", 60), s.get("price", 0.0),
+                s.get("instructions", ""), s.get("color", "#E0A9AF"),
+                s.get("is_active", 1)
+            ))
+
+    if "appointments" in data and isinstance(data["appointments"], list):
+        for a in data["appointments"]:
+            cursor.execute("""
+            INSERT OR REPLACE INTO appointments (
+                id, patient_id, service_id, appointment_date, appointment_time, duration_minutes,
+                status, specialist, notes, confirmation_token, reminder_sent_at, confirmed_at, canceled_at, cancellation_reason, created_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (
+                a.get("id"), a.get("patient_id"), a.get("service_id"),
+                a.get("appointment_date"), a.get("appointment_time"),
+                a.get("duration_minutes", 60), a.get("status", "Pendiente"),
+                a.get("specialist", "Cosmetóloga Constanza Díaz"),
+                a.get("notes"), a.get("confirmation_token") or secrets.token_urlsafe(16),
+                a.get("reminder_sent_at"), a.get("confirmed_at"),
+                a.get("canceled_at"), a.get("cancellation_reason"),
+                a.get("created_at")
+            ))
+
+    if "settings" in data and isinstance(data["settings"], dict):
+        for k, v in data["settings"].items():
+            cursor.execute("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)", (k, str(v)))
+
+    conn.commit()
+    conn.close()
+    return True
+
 

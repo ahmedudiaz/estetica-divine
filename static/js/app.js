@@ -290,6 +290,7 @@ function initEventListeners() {
 
 // Carga de Datos Global
 async function loadAllData() {
+  await checkAndRestorePersistedState();
   await Promise.all([
     loadStats(),
     loadPatients(),
@@ -1152,9 +1153,129 @@ async function handleSettingsSubmit(e) {
     });
     if (res.ok) {
       showToast("Configuración guardada correctamente ✨");
+      triggerPersistentBackup();
     }
   } catch (err) {
     console.error(err);
+  }
+}
+
+// ----------------------------------------------------
+// PERSISTENCIA & SINCRONIZACIÓN AUTOMÁTICA EN CLIENTE
+// ----------------------------------------------------
+let syncSaveTimeout = null;
+
+function triggerPersistentBackup() {
+  clearTimeout(syncSaveTimeout);
+  syncSaveTimeout = setTimeout(async () => {
+    try {
+      const res = await fetch("/api/sync/state");
+      const json = await res.json();
+      if (json.success && json.data) {
+        localStorage.setItem("estetica_divine_backup_v1", JSON.stringify(json.data));
+        localStorage.setItem("estetica_divine_has_custom_data", "true");
+        console.log("💾 Respaldo automático guardado en el dispositivo.");
+      }
+    } catch (e) {
+      console.warn("No se pudo guardar respaldo:", e);
+    }
+  }, 400);
+}
+
+async function checkAndRestorePersistedState() {
+  const hasCustom = localStorage.getItem("estetica_divine_has_custom_data");
+  const savedData = localStorage.getItem("estetica_divine_backup_v1");
+
+  if (hasCustom === "true" && savedData) {
+    try {
+      const parsed = JSON.parse(savedData);
+      // Enviar al servidor para restaurar la sesión si Render se reinició
+      await fetch("/api/sync/state", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(parsed)
+      });
+      console.log("✨ Estado restaurado exitosamente desde memoria local.");
+    } catch (e) {
+      console.error("Error restaurando estado:", e);
+    }
+  }
+}
+
+async function downloadBackupJSON() {
+  try {
+    const res = await fetch("/api/sync/state");
+    const json = await res.json();
+    if (json.success) {
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(json.data, null, 2));
+      const downloadAnchor = document.createElement('a');
+      const todayISO = formatDateISO(new Date());
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", `estetica_divine_respaldo_${todayISO}.json`);
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+      showToast("Copia de seguridad descargada 📥");
+    }
+  } catch (e) {
+    console.error(e);
+    showToast("Error al descargar respaldo");
+  }
+}
+
+async function restoreBackupJSON(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = async (e) => {
+    try {
+      const data = JSON.parse(e.target.result);
+      const res = await fetch("/api/sync/state", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data)
+      });
+      const json = await res.json();
+      if (json.success) {
+        localStorage.setItem("estetica_divine_backup_v1", JSON.stringify(data));
+        localStorage.setItem("estetica_divine_has_custom_data", "true");
+        showToast("Copia de seguridad restaurada con éxito ✨");
+        loadAllData();
+      } else {
+        showToast("El archivo de respaldo no es válido.");
+      }
+    } catch (err) {
+      console.error(err);
+      showToast("Error al leer el archivo de respaldo.");
+    }
+  };
+  reader.readAsText(file);
+}
+
+async function clearSampleDemoData() {
+  if (confirm("¿Estás segura de que deseas borrar los pacientes y citas de ejemplo para comenzar con la agenda limpia?")) {
+    const emptyState = {
+      patients: [],
+      appointments: [],
+      services: state.services,
+      settings: state.settings
+    };
+    try {
+      const res = await fetch("/api/sync/state", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(emptyState)
+      });
+      if (res.ok) {
+        localStorage.setItem("estetica_divine_backup_v1", JSON.stringify(emptyState));
+        localStorage.setItem("estetica_divine_has_custom_data", "true");
+        showToast("Datos de prueba eliminados. Agenda lista para uso real ✨");
+        await loadAllData();
+      }
+    } catch (e) {
+      console.error(e);
+    }
   }
 }
 
@@ -1225,6 +1346,42 @@ async function deleteAppointmentConfirm(apptId) {
       loadAppointmentsForDate();
       if (state.activeTab === "calendar") loadWeeklyCalendar();
       loadStats();
+      triggerPersistentBackup();
+    } catch (e) {
+      console.error(e);
+    }
+  }
+}
+
+async function deletePatientConfirm(patientId, patientName) {
+  if (confirm(`¿Estás segura de que deseas eliminar a "${patientName}" y todas sus citas asociadas?`)) {
+    try {
+      const res = await fetch(`/api/patients/${patientId}`, { method: "DELETE" });
+      const json = await res.json();
+      if (json.success) {
+        showToast("Paciente eliminado con éxito.");
+        await loadPatients();
+        loadStats();
+        if (state.activeTab === "agenda") loadAppointmentsForDate();
+        if (state.activeTab === "calendar") loadWeeklyCalendar();
+        triggerPersistentBackup();
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  }
+}
+
+async function deleteServiceConfirm(serviceId, serviceName) {
+  if (confirm(`¿Estás segura de que deseas eliminar el tratamiento "${serviceName}" del catálogo?`)) {
+    try {
+      const res = await fetch(`/api/services/${serviceId}`, { method: "DELETE" });
+      const json = await res.json();
+      if (json.success) {
+        showToast("Tratamiento eliminado del catálogo.");
+        loadServices();
+        triggerPersistentBackup();
+      }
     } catch (e) {
       console.error(e);
     }
@@ -1260,6 +1417,7 @@ async function handleAppointmentSubmit(e) {
       loadAppointmentsForDate();
       if (state.activeTab === "calendar") loadWeeklyCalendar();
       loadStats();
+      triggerPersistentBackup();
     }
   } catch (err) {
     console.error(err);
@@ -1294,6 +1452,7 @@ async function handlePatientSubmit(e) {
       showToast(id ? "Paciente actualizado correctamente ✨" : "Paciente registrado con éxito ✨");
       await loadPatients();
       loadStats();
+      triggerPersistentBackup();
     }
   } catch (err) {
     console.error(err);
@@ -1326,6 +1485,7 @@ async function handleServiceSubmit(e) {
       closeModal("modal-service");
       showToast(id ? "Tratamiento actualizado correctamente ✨" : "Tratamiento agregado al catálogo ✨");
       loadServices();
+      triggerPersistentBackup();
     }
   } catch (err) {
     console.error(err);
@@ -1344,3 +1504,4 @@ function showToast(message) {
     toast.remove();
   }, 3500);
 }
+

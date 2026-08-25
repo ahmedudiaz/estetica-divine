@@ -149,5 +149,30 @@ class TestGlowAuraEstetica(unittest.TestCase):
         self.assertTrue(deleted)
         print(f"[TEST] Tratamiento ID {svc_id} eliminado/desactivado con éxito.")
 
+    def test_sync_export_import(self):
+        from database import export_full_state, import_full_state, create_patient, get_patients
+        # 1. Exportar
+        state = export_full_state()
+        self.assertIn("patients", state)
+        self.assertIn("services", state)
+        self.assertIn("appointments", state)
+        self.assertIn("settings", state)
+        print(f"[TEST] Exportación de estado completa: {len(state['patients'])} pacientes, {len(state['services'])} servicios.")
+
+        # 2. Modificar y Re-importar
+        state["patients"].append({
+            "id": 999,
+            "name": "Paciente Sync Persistente",
+            "phone": "+34699999999",
+            "skin_type": "Grasa",
+            "allergies": "Ninguna",
+            "notes": "Test de sincronización"
+        })
+        import_full_state(state)
+        patients = get_patients(search="Paciente Sync Persistente")
+        self.assertTrue(len(patients) > 0)
+        self.assertEqual(patients[0]["name"], "Paciente Sync Persistente")
+        print("[TEST] Importación y auto-restauración de estado completada con éxito.")
+
 if __name__ == "__main__":
     unittest.main()
