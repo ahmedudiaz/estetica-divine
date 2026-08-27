@@ -20,7 +20,7 @@ from database import (
     get_patients, create_patient, get_services, get_settings,
     get_appointment_by_token, confirm_appointment_by_token,
     create_user, authenticate_user, create_session, get_user_by_session_token, delete_session,
-    export_full_state, import_full_state
+    reset_user_password, export_full_state, import_full_state
 )
 from scheduler import get_tomorrow_reminders, generate_reminder_message
 
@@ -70,15 +70,27 @@ class TestEsteticaDivine(unittest.TestCase):
         self.assertIsNone(bad_user)
         self.assertIsNotNone(bad_err)
 
-        # 5. Probar borrado de sesión (logout)
+        # 5. Probar recuperación de contraseña olvidada
+        reset_u, reset_err = reset_user_password("carolina@esteticadivine.com", "+56911223344", "nueva_clave_2026")
+        self.assertIsNone(reset_err)
+        self.assertIsNotNone(reset_u)
+
+        # Verificar que ahora entra con la nueva contraseña
+        login_u, login_err = authenticate_user("carolina@esteticadivine.com", "nueva_clave_2026")
+        self.assertIsNone(login_err)
+        self.assertIsNotNone(login_u)
+        print(f"[TEST] Recuperación y restablecimiento de contraseña verificado exitosamente.")
+
+        # 6. Probar borrado de sesión (logout)
         delete_session(token)
         self.assertIsNone(get_user_by_session_token(token))
         print(f"[TEST] Logout de sesión verificado exitosamente.")
 
     def test_multi_user_data_isolation(self):
         # Usuario 1: Constanza (ID 1)
-        # Usuario 2: Carolina (ID 2)
-        user2, _ = authenticate_user("carolina@esteticadivine.com", "segura1234")
+        # Usuario 2: Carolina (ID 2 con nueva_clave_2026)
+        user2, _ = authenticate_user("carolina@esteticadivine.com", "nueva_clave_2026")
+        self.assertIsNotNone(user2)
         user2_id = user2["id"]
 
         # Crear paciente exclusivo para Usuario 1

@@ -53,9 +53,15 @@
           <input type="email" id="login-email" class="form-control" placeholder="ejemplo@esteticadivine.com" required autocomplete="username">
         </div>
 
-        <div class="form-group">
+        <div class="form-group" style="margin-bottom: 8px;">
           <label class="form-label">Contraseña</label>
           <input type="password" id="login-password" class="form-control" placeholder="••••••••" required autocomplete="current-password">
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; margin-bottom: 16px;">
+          <a href="#" onclick="switchAuthTab('recovery'); return false;" style="color: var(--primary); font-size: 0.78rem; font-weight: 600; text-decoration: none;">
+            ¿Olvidaste tu contraseña?
+          </a>
         </div>
 
         <button type="submit" class="btn btn-primary btn-auth-submit" id="btn-login-submit">
@@ -103,6 +109,40 @@
 
         <div style="margin-top: 18px; text-align: center; font-size: 0.8rem; color: var(--text-muted);">
           ¿Ya tienes cuenta registrada? <a href="#" onclick="switchAuthTab('login'); return false;" style="color: var(--primary); font-weight: 700; text-decoration: none;">Iniciar Sesión</a>
+        </div>
+      </form>
+
+      <!-- Formulario 3: Recuperar Contraseña -->
+      <form id="form-recovery" class="auth-form" style="display: none;" onsubmit="handleRecoverySubmit(event)">
+        <div style="margin-bottom: 16px; text-align: center;">
+          <h4 style="font-size: 1rem; color: var(--text-main); font-weight: 700;">Recuperar Acceso a tu Cuenta</h4>
+          <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px;">Ingresa tu correo y WhatsApp registrado para verificar tu identidad y crear una nueva contraseña.</p>
+        </div>
+
+        <div id="auth-recovery-error" class="auth-error-box" style="display: none;"></div>
+        <div id="auth-recovery-success" style="display: none; background: #ecfdf5; border: 1px solid #a7f3d0; color: #065f46; padding: 10px 14px; border-radius: var(--radius-sm); font-size: 0.825rem; margin-bottom: 16px;"></div>
+
+        <div class="form-group">
+          <label class="form-label">Correo Electrónico Registrado</label>
+          <input type="email" id="recovery-email" class="form-control" placeholder="ejemplo@esteticadivine.com" required autocomplete="email">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">WhatsApp Profesional Registrado</label>
+          <input type="tel" id="recovery-phone" class="form-control" placeholder="+56912345678" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Nueva Contraseña (Mínimo 4 caracteres)</label>
+          <input type="password" id="recovery-new-password" class="form-control" placeholder="Crea tu nueva contraseña" required minlength="4" autocomplete="new-password">
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-auth-submit" id="btn-recovery-submit">
+          Restablecer Contraseña & Acceder ✨
+        </button>
+
+        <div style="margin-top: 18px; text-align: center; font-size: 0.8rem; color: var(--text-muted);">
+          <a href="#" onclick="switchAuthTab('login'); return false;" style="color: var(--primary); font-weight: 700; text-decoration: none;">← Volver al Inicio de Sesión</a>
         </div>
       </form>
     </div>

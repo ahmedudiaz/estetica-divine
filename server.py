@@ -18,7 +18,8 @@ from database import (
     get_settings, update_setting, mark_reminder_sent,
     get_appointment_by_token, confirm_appointment_by_token,
     export_full_state, import_full_state,
-    create_user, authenticate_user, create_session, get_user_by_session_token, delete_session
+    create_user, authenticate_user, create_session, get_user_by_session_token, delete_session,
+    reset_user_password
 )
 from scheduler import get_tomorrow_reminders, generate_reminder_message, generate_whatsapp_link
 from calendar_sync import get_local_ip, generate_ics_feed
@@ -316,6 +317,21 @@ class EsteticaRequestHandler(http.server.BaseHTTPRequestHandler):
 
             token = create_session(user["id"])
             return self.send_json({"success": True, "data": {"token": token, "user": user}})
+
+        if path == "/api/auth/reset-password":
+            email = body.get("email", "").strip()
+            phone = body.get("phone", "").strip()
+            new_password = body.get("new_password", "")
+
+            if not email or not phone or not new_password:
+                return self.send_json({"success": False, "error": "Todos los campos son obligatorios"}, 400)
+
+            user, err = reset_user_password(email, phone, new_password)
+            if err:
+                return self.send_json({"success": False, "error": err}, 400)
+
+            token = create_session(user["id"])
+            return self.send_json({"success": True, "data": {"token": token, "user": user}, "message": "Contraseña restablecida exitosamente."})
 
         if path == "/api/auth/logout":
             token = self.get_session_token()

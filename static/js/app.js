@@ -113,22 +113,86 @@ function switchAuthTab(tab) {
   const tabReg = document.getElementById("tab-btn-register");
   const formLogin = document.getElementById("form-login");
   const formReg = document.getElementById("form-register");
+  const formRec = document.getElementById("form-recovery");
   const errLogin = document.getElementById("auth-login-error");
   const errReg = document.getElementById("auth-register-error");
+  const errRec = document.getElementById("auth-recovery-error");
+  const succRec = document.getElementById("auth-recovery-success");
 
   if (errLogin) errLogin.style.display = "none";
   if (errReg) errReg.style.display = "none";
+  if (errRec) errRec.style.display = "none";
+  if (succRec) succRec.style.display = "none";
 
   if (tab === "login") {
     if (tabLogin) tabLogin.classList.add("active");
     if (tabReg) tabReg.classList.remove("active");
     if (formLogin) formLogin.style.display = "flex";
     if (formReg) formReg.style.display = "none";
-  } else {
+    if (formRec) formRec.style.display = "none";
+  } else if (tab === "register") {
     if (tabReg) tabReg.classList.add("active");
     if (tabLogin) tabLogin.classList.remove("active");
     if (formReg) formReg.style.display = "flex";
     if (formLogin) formLogin.style.display = "none";
+    if (formRec) formRec.style.display = "none";
+  } else if (tab === "recovery") {
+    if (tabLogin) tabLogin.classList.remove("active");
+    if (tabReg) tabReg.classList.remove("active");
+    if (formLogin) formLogin.style.display = "none";
+    if (formReg) formReg.style.display = "none";
+    if (formRec) formRec.style.display = "flex";
+  }
+}
+
+async function handleRecoverySubmit(event) {
+  event.preventDefault();
+  const email = document.getElementById("recovery-email").value.trim();
+  const phone = document.getElementById("recovery-phone").value.trim();
+  const new_password = document.getElementById("recovery-new-password").value;
+  const errorBox = document.getElementById("auth-recovery-error");
+  const successBox = document.getElementById("auth-recovery-success");
+  const submitBtn = document.getElementById("btn-recovery-submit");
+
+  if (errorBox) errorBox.style.display = "none";
+  if (successBox) successBox.style.display = "none";
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Verificando y restableciendo...";
+  }
+
+  try {
+    const res = await fetch("/api/auth/reset-password", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, phone, new_password })
+    });
+    const json = await res.json();
+
+    if (json.success && json.data) {
+      state.authToken = json.data.token;
+      state.currentUser = json.data.user;
+      localStorage.setItem("estetica_auth_token", state.authToken);
+      updateUserProfileUI();
+      hideAuthGateway();
+      showToast("¡Contraseña restablecida con éxito! Bienvenida 🌸");
+      loadAllData();
+    } else {
+      if (errorBox) {
+        errorBox.textContent = json.error || "No se pudo restablecer la contraseña.";
+        errorBox.style.display = "flex";
+      }
+    }
+  } catch (err) {
+    if (errorBox) {
+      errorBox.textContent = "Error al conectar con el servidor.";
+      errorBox.style.display = "flex";
+    }
+  } finally {
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.textContent = "Restablecer Contraseña & Acceder ✨";
+    }
   }
 }
 

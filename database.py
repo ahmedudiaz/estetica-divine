@@ -281,6 +281,47 @@ def authenticate_user(email, password):
     conn.close()
     return user, None
 
+def reset_user_password(email, phone, new_password):
+    conn = get_connection()
+    cursor = conn.cursor()
+    email_clean = email.strip().lower()
+    
+    def clean_digits(p):
+        return "".join(c for c in (p or "") if c.isdigit())
+    
+    phone_digits = clean_digits(phone)
+    if len(phone_digits) < 6:
+        conn.close()
+        return None, "Ingresa un número de teléfono o WhatsApp válido para verificar tu identidad."
+
+    user_row = cursor.execute("SELECT * FROM users WHERE LOWER(email) = ?", (email_clean,)).fetchone()
+    if not user_row:
+        conn.close()
+        return None, "No existe ninguna cuenta registrada con este correo electrónico."
+
+    db_phone_digits = clean_digits(user_row["phone"])
+    # Verificación de coincidencia de teléfono
+    if not (phone_digits in db_phone_digits or db_phone_digits in phone_digits or (len(phone_digits) >= 8 and phone_digits[-8:] == db_phone_digits[-8:])):
+        conn.close()
+        return None, "El número de teléfono/WhatsApp no coincide con el registrado en esta cuenta."
+
+    if len(new_password) < 4:
+        conn.close()
+        return None, "La nueva contraseña debe tener al menos 4 caracteres."
+
+    pwd_hash, salt = hash_password(new_password)
+    cursor.execute("""
+    UPDATE users SET password_hash = ?, salt = ? WHERE id = ?
+    """, (pwd_hash, salt, user_row["id"]))
+    
+    # Invalidar sesiones antiguas por seguridad
+    cursor.execute("DELETE FROM sessions WHERE user_id = ?", (user_row["id"],))
+    
+    conn.commit()
+    user = get_user_by_id(user_row["id"], conn)
+    conn.close()
+    return user, None
+
 def create_session(user_id, duration_days=30):
     conn = get_connection()
     token = secrets.token_hex(32)
