@@ -11,92 +11,190 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Estética Divine">
-  <link rel="apple-touch-icon" href="/static/img/icon.svg">
-  <link rel="icon" type="image/svg+xml" href="/static/img/icon.svg">
+  <link rel="apple-touch-icon" href="/static/img/logo.jpg">
+  <link rel="icon" type="image/jpeg" href="/static/img/logo.jpg">
 
-  <link rel="stylesheet" href="/static/css/style.css?v=4.0">
+  <link rel="stylesheet" href="/static/css/style.css?v=5.0">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-  <div class="app-container">
-    <!-- Sidebar (Escritorio) -->
-    <aside class="sidebar">
-      <div class="brand">
-        <div class="brand-icon">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+
+  <!-- ====================================================
+       VISTA 1: INICIO DE SESIÓN & CREAR CUENTA (GATEWAY)
+       ==================================================== -->
+  <div id="view-auth" class="auth-wrapper">
+    <div class="auth-card">
+      <div class="auth-header">
+        <div class="auth-logo-container">
+          <img src="/static/img/logo.jpg" alt="Estética Divine" class="auth-logo-img">
         </div>
-        <div class="brand-info">
-          <h1>Estética Divine</h1>
-          <p>Centro de Estética</p>
-        </div>
+        <h2>Estética Divine</h2>
+        <p>Agenda Profesional & Gestión de Pacientes</p>
       </div>
 
-      <ul class="nav-menu">
-        <li class="nav-item active" data-tab="agenda">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-          <span>Agenda & Turnos</span>
-        </li>
-        <li class="nav-item" data-tab="calendar">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01M16 18h.01"/></svg>
-          <span>Calendario Horario</span>
-        </li>
-        <li class="nav-item" data-tab="reminders">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-          <span>Recordatorios 24h</span>
-          <span class="badge" id="badge-tomorrow-unconfirmed">0</span>
-        </li>
-        <li class="nav-item" data-tab="sync">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
-          <span>Sincronizar Celular</span>
-        </li>
-        <li class="nav-item" data-tab="patients">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-          <span>Pacientes & Fichas</span>
-        </li>
-        <li class="nav-item" data-tab="services">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-          <span>Tratamientos</span>
-        </li>
-        <li class="nav-item" data-tab="settings">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-          <span>Configuración & WhatsApp</span>
-        </li>
-      </ul>
-
-      <div class="sidebar-footer">
-        <div class="user-avatar">CD</div>
-        <div class="user-details">
-          <h4>Cosmetóloga Constanza Díaz</h4>
-          <p>Directora & Cosmetóloga</p>
-        </div>
+      <!-- Auth Tabs: Iniciar Sesión / Crear Cuenta -->
+      <div class="auth-tabs">
+        <button type="button" id="tab-btn-login" class="auth-tab-btn active" onclick="switchAuthTab('login')">
+          🔑 Iniciar Sesión
+        </button>
+        <button type="button" id="tab-btn-register" class="auth-tab-btn" onclick="switchAuthTab('register')">
+          ✨ Crear Cuenta
+        </button>
       </div>
-    </aside>
 
-    <!-- Main Content -->
-    <main class="main-content">
-      <!-- Top Header -->
-      <header class="top-header">
-        <div class="header-title">
-          <h2 id="view-title">Agenda & Turnos</h2>
-          <p id="current-datetime-display">Cargando...</p>
-        </div>
-        <div class="header-actions">
-          <button class="btn btn-secondary btn-sm" id="btn-header-sync" title="Conectar Celular">
-            📱 Conectar Celular
-          </button>
-          <button class="btn btn-primary" id="btn-quick-new-appointment">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            <span>+ Agendar Cita</span>
-          </button>
-        </div>
-      </header>
+      <!-- Formulario 1: Iniciar Sesión -->
+      <form id="form-login" class="auth-form" onsubmit="handleLoginSubmit(event)">
+        <div id="auth-login-error" class="auth-error-box" style="display: none;"></div>
 
-      <!-- Content Body -->
-      <div class="content-body">
-        <!-- Stats Row -->
-        <div class="stats-grid">
+        <div class="form-group">
+          <label class="form-label">Correo Electrónico</label>
+          <input type="email" id="login-email" class="form-control" placeholder="ejemplo@esteticadivine.com" required autocomplete="username">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Contraseña</label>
+          <input type="password" id="login-password" class="form-control" placeholder="••••••••" required autocomplete="current-password">
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-auth-submit" id="btn-login-submit">
+          Ingresar a mi Agenda 🌸
+        </button>
+
+        <div style="margin-top: 18px; text-align: center; font-size: 0.8rem; color: var(--text-muted);">
+          ¿No tienes una cuenta aún? <a href="#" onclick="switchAuthTab('register'); return false;" style="color: var(--primary); font-weight: 700; text-decoration: none;">Crear Cuenta Nueva</a>
+        </div>
+      </form>
+
+      <!-- Formulario 2: Crear Cuenta Nueva -->
+      <form id="form-register" class="auth-form" style="display: none;" onsubmit="handleRegisterSubmit(event)">
+        <div id="auth-register-error" class="auth-error-box" style="display: none;"></div>
+
+        <div class="form-group">
+          <label class="form-label">Nombre y Apellido</label>
+          <input type="text" id="reg-name" class="form-control" placeholder="Ej: Cosmetóloga María Pérez" required>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Especialidad / Cargo</label>
+            <input type="text" id="reg-specialty" class="form-control" placeholder="Ej: Cosmetóloga, Kinesióloga" value="Cosmetóloga" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">WhatsApp Profesional</label>
+            <input type="tel" id="reg-phone" class="form-control" placeholder="+56912345678" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Correo Electrónico</label>
+          <input type="email" id="reg-email" class="form-control" placeholder="tu-correo@esteticadivine.com" required autocomplete="email">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Contraseña (Mínimo 4 caracteres)</label>
+          <input type="password" id="reg-password" class="form-control" placeholder="Crea una contraseña segura" required minlength="4" autocomplete="new-password">
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-auth-submit" id="btn-register-submit">
+          Crear mi Cuenta & Entrar ✨
+        </button>
+
+        <div style="margin-top: 18px; text-align: center; font-size: 0.8rem; color: var(--text-muted);">
+          ¿Ya tienes cuenta registrada? <a href="#" onclick="switchAuthTab('login'); return false;" style="color: var(--primary); font-weight: 700; text-decoration: none;">Iniciar Sesión</a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ====================================================
+       VISTA 2: PANEL PRINCIPAL (SOLO USUARIOS AUTENTICADOS)
+       ==================================================== -->
+  <div id="app-main-layout" style="display: none;">
+    <div class="app-container">
+      <!-- Sidebar (Escritorio) -->
+      <aside class="sidebar">
+        <div class="brand">
+          <div class="brand-icon">
+            <img src="/static/img/logo.jpg" alt="Estética Divine" class="brand-logo-img">
+          </div>
+          <div class="brand-info">
+            <h1>Estética Divine</h1>
+            <p id="sidebar-user-specialty">Centro de Estética</p>
+          </div>
+        </div>
+
+        <ul class="nav-menu">
+          <li class="nav-item active" data-tab="agenda">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            <span>Agenda & Turnos</span>
+          </li>
+          <li class="nav-item" data-tab="calendar">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01M16 18h.01"/></svg>
+            <span>Calendario Horario</span>
+          </li>
+          <li class="nav-item" data-tab="reminders">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+            <span>Recordatorios 24h</span>
+            <span class="badge" id="badge-tomorrow-unconfirmed">0</span>
+          </li>
+          <li class="nav-item" data-tab="sync">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+            <span>Sincronizar Celular</span>
+          </li>
+          <li class="nav-item" data-tab="patients">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            <span>Pacientes & Fichas</span>
+          </li>
+          <li class="nav-item" data-tab="services">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            <span>Tratamientos</span>
+          </li>
+          <li class="nav-item" data-tab="settings">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            <span>Configuración & WhatsApp</span>
+          </li>
+        </ul>
+
+        <div class="sidebar-footer">
+          <div class="user-avatar" id="sidebar-user-avatar">CD</div>
+          <div class="user-details">
+            <h4 id="sidebar-user-name">Cosmetóloga Constanza Díaz</h4>
+            <p id="sidebar-user-role">Cosmetóloga & Directora</p>
+          </div>
+          <button type="button" class="btn-logout" onclick="handleLogout()" title="Cerrar Sesión">
+            🚪
+          </button>
+        </div>
+      </aside>
+
+      <!-- Main Content -->
+      <main class="main-content">
+        <!-- Top Header -->
+        <header class="top-header">
+          <div class="header-title">
+            <h2 id="view-title">Agenda & Turnos</h2>
+            <p id="current-datetime-display">Cargando...</p>
+          </div>
+          <div class="header-actions">
+            <button class="btn btn-secondary btn-sm" id="btn-header-sync" title="Conectar Celular">
+              📱 Conectar Celular
+            </button>
+            <button class="btn btn-primary" id="btn-quick-new-appointment">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              <span>+ Agendar Cita</span>
+            </button>
+            <button class="btn btn-secondary btn-sm btn-mobile-logout" onclick="handleLogout()" title="Cerrar Sesión">
+              🚪 Salir
+            </button>
+          </div>
+        </header>
+
+        <!-- Content Body -->
+        <div class="content-body">
+          <!-- Stats Row -->
+          <div class="stats-grid">
           <div class="stat-card">
             <div class="stat-icon pink">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
@@ -481,6 +579,7 @@
       <span>Pacientes</span>
     </button>
   </nav>
+  </div>
 
   <!-- MODAL: NUEVA / EDITAR CITA -->
   <div class="modal-backdrop" id="modal-appointment">
@@ -689,7 +788,7 @@
   <!-- Toast Container -->
   <div class="toast-container" id="toast-container"></div>
 
-  <script src="/static/js/qr.js?v=4.0"></script>
-  <script src="/static/js/app.js?v=4.0"></script>
+  <script src="/static/js/qr.js?v=5.0"></script>
+  <script src="/static/js/app.js?v=5.0"></script>
 </body>
 </html>

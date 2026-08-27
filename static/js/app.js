@@ -1,5 +1,7 @@
 // Estética Divine - App Logic SPA & Sincronización Móvil
 let state = {
+  authToken: localStorage.getItem("estetica_auth_token") || null,
+  currentUser: null,
   currentDate: new Date(),
   calendarDate: new Date(),
   activeTab: "agenda",
@@ -11,14 +13,237 @@ let state = {
   network: {}
 };
 
+// Wrapper para inyectar token de autenticación en todas las peticiones
+async function apiFetch(url, options = {}) {
+  options.headers = options.headers || {};
+  if (state.authToken) {
+    if (options.headers instanceof Headers) {
+      options.headers.set("Authorization", "Bearer " + state.authToken);
+    } else {
+      options.headers["Authorization"] = "Bearer " + state.authToken;
+    }
+  }
+  try {
+    const response = await fetch(url, options);
+    if (response.status === 401 && !url.includes("/api/auth/login") && !url.includes("/api/auth/register")) {
+      console.warn("Sesión no autorizada o expirada. Redirigiendo a Login...");
+      state.authToken = null;
+      state.currentUser = null;
+      localStorage.removeItem("estetica_auth_token");
+      showAuthGateway();
+    }
+    return response;
+  } catch (err) {
+    console.error("Error en apiFetch:", err);
+    throw err;
+  }
+}
+
 // Inicialización
 document.addEventListener("DOMContentLoaded", () => {
   initServiceWorker();
   initDateTime();
   initNavigation();
   initEventListeners();
-  loadAllData();
+  checkAuthSession();
 });
+
+// Control de Sesión y Gateway de Entrada
+async function checkAuthSession() {
+  if (!state.authToken) {
+    showAuthGateway();
+    return;
+  }
+  try {
+    const res = await apiFetch("/api/auth/me");
+    const json = await res.json();
+    if (json.success && json.data) {
+      state.currentUser = json.data;
+      updateUserProfileUI();
+      hideAuthGateway();
+      loadAllData();
+    } else {
+      showAuthGateway();
+    }
+  } catch (e) {
+    showAuthGateway();
+  }
+}
+
+function showAuthGateway() {
+  const viewAuth = document.getElementById("view-auth");
+  const mainLayout = document.getElementById("app-main-layout");
+  if (viewAuth) viewAuth.style.display = "flex";
+  if (mainLayout) mainLayout.style.display = "none";
+}
+
+function hideAuthGateway() {
+  const viewAuth = document.getElementById("view-auth");
+  const mainLayout = document.getElementById("app-main-layout");
+  if (viewAuth) viewAuth.style.display = "none";
+  if (mainLayout) mainLayout.style.display = "block";
+}
+
+function updateUserProfileUI() {
+  if (!state.currentUser) return;
+  const u = state.currentUser;
+  
+  const nameEl = document.getElementById("sidebar-user-name");
+  const roleEl = document.getElementById("sidebar-user-role");
+  const specEl = document.getElementById("sidebar-user-specialty");
+  const avatarEl = document.getElementById("sidebar-user-avatar");
+
+  if (nameEl) nameEl.textContent = u.name;
+  if (roleEl) roleEl.textContent = u.specialty || "Especialista";
+  if (specEl) specEl.textContent = u.specialty || "Centro de Estética";
+
+  if (avatarEl && u.name) {
+    const initials = u.name.split(" ").filter(w => w.length > 0).map(w => w[0]).slice(0, 2).join("").toUpperCase();
+    avatarEl.textContent = initials || "ED";
+  }
+
+  const specialistInput = document.getElementById("appt-specialist");
+  if (specialistInput && (!specialistInput.value || specialistInput.value.includes("Constanza"))) {
+    specialistInput.value = u.name;
+  }
+}
+
+function switchAuthTab(tab) {
+  const tabLogin = document.getElementById("tab-btn-login");
+  const tabReg = document.getElementById("tab-btn-register");
+  const formLogin = document.getElementById("form-login");
+  const formReg = document.getElementById("form-register");
+  const errLogin = document.getElementById("auth-login-error");
+  const errReg = document.getElementById("auth-register-error");
+
+  if (errLogin) errLogin.style.display = "none";
+  if (errReg) errReg.style.display = "none";
+
+  if (tab === "login") {
+    if (tabLogin) tabLogin.classList.add("active");
+    if (tabReg) tabReg.classList.remove("active");
+    if (formLogin) formLogin.style.display = "flex";
+    if (formReg) formReg.style.display = "none";
+  } else {
+    if (tabReg) tabReg.classList.add("active");
+    if (tabLogin) tabLogin.classList.remove("active");
+    if (formReg) formReg.style.display = "flex";
+    if (formLogin) formLogin.style.display = "none";
+  }
+}
+
+async function handleLoginSubmit(event) {
+  event.preventDefault();
+  const email = document.getElementById("login-email").value.trim();
+  const password = document.getElementById("login-password").value;
+  const errorBox = document.getElementById("auth-login-error");
+  const submitBtn = document.getElementById("btn-login-submit");
+
+  if (errorBox) errorBox.style.display = "none";
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Verificando...";
+  }
+
+  try {
+    const res = await fetch("/api/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password })
+    });
+    const json = await res.json();
+
+    if (json.success && json.data) {
+      state.authToken = json.data.token;
+      state.currentUser = json.data.user;
+      localStorage.setItem("estetica_auth_token", state.authToken);
+      updateUserProfileUI();
+      hideAuthGateway();
+      showToast("¡Bienvenida, " + (state.currentUser.name || "Especialista") + "! 🌸");
+      loadAllData();
+    } else {
+      if (errorBox) {
+        errorBox.textContent = json.error || "Credenciales incorrectas";
+        errorBox.style.display = "flex";
+      }
+    }
+  } catch (err) {
+    if (errorBox) {
+      errorBox.textContent = "Error al conectar con el servidor.";
+      errorBox.style.display = "flex";
+    }
+  } finally {
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.textContent = "Ingresar a mi Agenda 🌸";
+    }
+  }
+}
+
+async function handleRegisterSubmit(event) {
+  event.preventDefault();
+  const name = document.getElementById("reg-name").value.trim();
+  const specialty = document.getElementById("reg-specialty").value.trim();
+  const phone = document.getElementById("reg-phone").value.trim();
+  const email = document.getElementById("reg-email").value.trim();
+  const password = document.getElementById("reg-password").value;
+  const errorBox = document.getElementById("auth-register-error");
+  const submitBtn = document.getElementById("btn-register-submit");
+
+  if (errorBox) errorBox.style.display = "none";
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Creando cuenta...";
+  }
+
+  try {
+    const res = await fetch("/api/auth/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, specialty, phone, email, password })
+    });
+    const json = await res.json();
+
+    if (json.success && json.data) {
+      state.authToken = json.data.token;
+      state.currentUser = json.data.user;
+      localStorage.setItem("estetica_auth_token", state.authToken);
+      updateUserProfileUI();
+      hideAuthGateway();
+      showToast("¡Cuenta creada con éxito! Bienvenida, " + (state.currentUser.name || "Especialista") + " ✨");
+      loadAllData();
+    } else {
+      if (errorBox) {
+        errorBox.textContent = json.error || "No se pudo crear la cuenta.";
+        errorBox.style.display = "flex";
+      }
+    }
+  } catch (err) {
+    if (errorBox) {
+      errorBox.textContent = "Error al conectar con el servidor.";
+      errorBox.style.display = "flex";
+    }
+  } finally {
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.textContent = "Crear mi Cuenta & Entrar ✨";
+    }
+  }
+}
+
+async function handleLogout() {
+  if (confirm("¿Deseas cerrar tu sesión actual?")) {
+    try {
+      await apiFetch("/api/auth/logout", { method: "POST" });
+    } catch (e) {}
+    state.authToken = null;
+    state.currentUser = null;
+    localStorage.removeItem("estetica_auth_token");
+    showAuthGateway();
+    showToast("Sesión cerrada correctamente 🚪");
+  }
+}
+
 
 function initServiceWorker() {
   if ("serviceWorker" in navigator) {
@@ -232,11 +457,11 @@ function initEventListeners() {
       showToast("🌐 Iniciando enlace público seguro... Por favor espera unos segundos");
       
       try {
-        await fetch("/api/tunnel/start", { method: "POST" });
+        await apiFetch("/api/tunnel/start", { method: "POST" });
         let attempts = 0;
         const interval = setInterval(async () => {
           attempts++;
-          const res = await fetch("/api/network-info");
+          const res = await apiFetch("/api/network-info");
           const json = await res.json();
           if (json.success && json.data && json.data.public_url) {
             clearInterval(interval);
@@ -265,7 +490,7 @@ function initEventListeners() {
     btnSaveCustomUrl.addEventListener("click", async () => {
       const url = document.getElementById("input-custom-public-url").value.trim();
       try {
-        const res = await fetch("/api/tunnel/set-url", {
+        const res = await apiFetch("/api/tunnel/set-url", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ url })
@@ -302,7 +527,7 @@ async function loadAllData() {
 
 async function loadStats() {
   try {
-    const res = await fetch("/api/stats");
+    const res = await apiFetch("/api/stats");
     const json = await res.json();
     if (json.success) {
       state.stats = json.data;
@@ -322,7 +547,7 @@ async function loadStats() {
 // ----------------------------------------------------
 async function loadNetworkInfo() {
   try {
-    const res = await fetch("/api/network-info");
+    const res = await apiFetch("/api/network-info");
     const json = await res.json();
     if (json.success && json.data) {
       state.network = json.data;
@@ -375,7 +600,7 @@ async function loadAppointmentsForDate() {
   document.getElementById("agenda-date-display").textContent = formatDisplayDate(state.currentDate);
 
   try {
-    const res = await fetch(`/api/appointments?date_from=${dateStr}&date_to=${dateStr}`);
+    const res = await apiFetch(`/api/appointments?date_from=${dateStr}&date_to=${dateStr}`);
     const json = await res.json();
     if (json.success) {
       state.appointments = json.data;
@@ -510,7 +735,7 @@ async function loadWeeklyCalendar() {
 
   // Cargar citas de la semana
   try {
-    const res = await fetch(`/api/appointments?date_from=${startDateStr}&date_to=${endDateStr}`);
+    const res = await apiFetch(`/api/appointments?date_from=${startDateStr}&date_to=${endDateStr}`);
     const json = await res.json();
     const appointments = json.success ? json.data : [];
 
@@ -731,7 +956,7 @@ async function loadTomorrowReminders() {
   container.innerHTML = `<p style="padding: 20px; color: var(--text-muted);">Cargando citas de mañana...</p>`;
 
   try {
-    const res = await fetch("/api/reminders/tomorrow");
+    const res = await apiFetch("/api/reminders/tomorrow");
     const json = await res.json();
     if (!json.success || json.data.length === 0) {
       container.innerHTML = `
@@ -794,7 +1019,7 @@ async function loadTomorrowReminders() {
 
 async function markSentAndReload(apptId) {
   try {
-    await fetch(`/api/reminders/send/${apptId}`, { method: "POST" });
+    await apiFetch(`/api/reminders/send/${apptId}`, { method: "POST" });
     showToast("Recordatorio registrado como enviado.");
     triggerPersistentBackup();
     setTimeout(() => {
@@ -808,7 +1033,7 @@ async function markSentAndReload(apptId) {
 
 async function sendIndividualReminder(apptId) {
   try {
-    const res = await fetch(`/api/reminders/send/${apptId}`, { method: "POST" });
+    const res = await apiFetch(`/api/reminders/send/${apptId}`, { method: "POST" });
     const json = await res.json();
     if (json.success && json.data.whatsapp_link) {
       window.open(json.data.whatsapp_link, "_blank");
@@ -826,7 +1051,7 @@ async function sendIndividualReminder(apptId) {
 
 async function sendAllPendingReminders() {
   try {
-    const res = await fetch("/api/reminders/tomorrow");
+    const res = await apiFetch("/api/reminders/tomorrow");
     const json = await res.json();
     if (json.success && json.data.length > 0) {
       const pending = json.data.filter(a => a.status !== "Confirmada" && a.status !== "Cancelada");
@@ -835,7 +1060,7 @@ async function sendAllPendingReminders() {
         return;
       }
       for (const item of pending) {
-        await fetch(`/api/reminders/send/${item.id}`, { method: "POST" });
+        await apiFetch(`/api/reminders/send/${item.id}`, { method: "POST" });
       }
       showToast(`Se prepararon y registraron ${pending.length} recordatorios.`);
       triggerPersistentBackup();
@@ -858,7 +1083,7 @@ function copyToClipboard(text) {
 // ----------------------------------------------------
 async function loadPatients(search = "") {
   try {
-    const res = await fetch(`/api/patients?search=${encodeURIComponent(search)}`);
+    const res = await apiFetch(`/api/patients?search=${encodeURIComponent(search)}`);
     const json = await res.json();
     if (json.success) {
       state.patients = json.data;
@@ -937,7 +1162,7 @@ function openPatientModal(initialData = null) {
 
 async function editPatient(patientId) {
   try {
-    const res = await fetch(`/api/patients/${patientId}`);
+    const res = await apiFetch(`/api/patients/${patientId}`);
     const json = await res.json();
     if (json.success && json.data) {
       openPatientModal(json.data);
@@ -950,7 +1175,7 @@ async function editPatient(patientId) {
 async function deletePatientConfirm(patientId, patientName) {
   if (confirm(`¿Estás segura de que deseas eliminar a la paciente "${patientName}"?\nSe borrarán permanentemente sus datos y citas asociadas.`)) {
     try {
-      const res = await fetch(`/api/patients/${patientId}`, { method: "DELETE" });
+      const res = await apiFetch(`/api/patients/${patientId}`, { method: "DELETE" });
       const json = await res.json();
       if (json.success) {
         showToast("Paciente eliminado con éxito.");
@@ -967,7 +1192,7 @@ async function deletePatientConfirm(patientId, patientName) {
 
 async function viewPatientHistory(patientId) {
   try {
-    const res = await fetch(`/api/patients/${patientId}`);
+    const res = await apiFetch(`/api/patients/${patientId}`);
     const json = await res.json();
     if (json.success && json.data) {
       const p = json.data;
@@ -1020,7 +1245,7 @@ function quickScheduleForPatient(patientId) {
 // ----------------------------------------------------
 async function loadServices() {
   try {
-    const res = await fetch("/api/services");
+    const res = await apiFetch("/api/services");
     const json = await res.json();
     if (json.success) {
       state.services = json.data;
@@ -1095,7 +1320,7 @@ function openServiceModal(initialData = null) {
 
 async function editService(serviceId) {
   try {
-    const res = await fetch(`/api/services/${serviceId}`);
+    const res = await apiFetch(`/api/services/${serviceId}`);
     const json = await res.json();
     if (json.success && json.data) {
       openServiceModal(json.data);
@@ -1108,7 +1333,7 @@ async function editService(serviceId) {
 async function deleteServiceConfirm(serviceId, serviceName) {
   if (confirm(`¿Estás segura de que deseas eliminar el tratamiento "${serviceName}" del catálogo?`)) {
     try {
-      const res = await fetch(`/api/services/${serviceId}`, { method: "DELETE" });
+      const res = await apiFetch(`/api/services/${serviceId}`, { method: "DELETE" });
       const json = await res.json();
       if (json.success) {
         showToast("Tratamiento eliminado del catálogo.");
@@ -1125,7 +1350,7 @@ async function deleteServiceConfirm(serviceId, serviceName) {
 // ----------------------------------------------------
 async function loadSettings() {
   try {
-    const res = await fetch("/api/settings");
+    const res = await apiFetch("/api/settings");
     const json = await res.json();
     if (json.success) {
       state.settings = json.data;
@@ -1151,7 +1376,7 @@ async function handleSettingsSubmit(e) {
   };
 
   try {
-    const res = await fetch("/api/settings", {
+    const res = await apiFetch("/api/settings", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload)
@@ -1174,7 +1399,7 @@ function triggerPersistentBackup() {
   clearTimeout(syncSaveTimeout);
   syncSaveTimeout = setTimeout(async () => {
     try {
-      const res = await fetch("/api/sync/state");
+      const res = await apiFetch("/api/sync/state");
       const json = await res.json();
       if (json.success && json.data) {
         localStorage.setItem("estetica_divine_backup_v1", JSON.stringify(json.data));
@@ -1192,7 +1417,7 @@ async function checkAndRestorePersistedState() {
   const savedData = localStorage.getItem("estetica_divine_backup_v1");
 
   try {
-    const res = await fetch("/api/sync/state");
+    const res = await apiFetch("/api/sync/state");
     const json = await res.json();
 
     if (json.success && json.data) {
@@ -1202,7 +1427,7 @@ async function checkAndRestorePersistedState() {
       // Si el servidor está vacío (reinicio de Render) y el cliente tiene datos guardados:
       if (serverPatients.length === 0 && serverAppts.length === 0 && hasCustom === "true" && savedData) {
         const parsed = JSON.parse(savedData);
-        await fetch("/api/sync/state", {
+        await apiFetch("/api/sync/state", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(parsed)
@@ -1222,7 +1447,7 @@ async function checkAndRestorePersistedState() {
 
 async function downloadBackupJSON() {
   try {
-    const res = await fetch("/api/sync/state");
+    const res = await apiFetch("/api/sync/state");
     const json = await res.json();
     if (json.success) {
       const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(json.data, null, 2));
@@ -1249,7 +1474,7 @@ async function restoreBackupJSON(event) {
   reader.onload = async (e) => {
     try {
       const data = JSON.parse(e.target.result);
-      const res = await fetch("/api/sync/state", {
+      const res = await apiFetch("/api/sync/state", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data)
@@ -1280,7 +1505,7 @@ async function clearSampleDemoData() {
       settings: state.settings
     };
     try {
-      const res = await fetch("/api/sync/state", {
+      const res = await apiFetch("/api/sync/state", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(emptyState)
@@ -1346,7 +1571,7 @@ function openAppointmentModal(initialData = {}) {
 
 async function editAppointment(apptId) {
   try {
-    const res = await fetch(`/api/appointments/${apptId}`);
+    const res = await apiFetch(`/api/appointments/${apptId}`);
     const json = await res.json();
     if (json.success && json.data) {
       openAppointmentModal(json.data);
@@ -1359,7 +1584,7 @@ async function editAppointment(apptId) {
 async function deleteAppointmentConfirm(apptId) {
   if (confirm("¿Estás seguro de que deseas eliminar esta cita?")) {
     try {
-      await fetch(`/api/appointments/${apptId}`, { method: "DELETE" });
+      await apiFetch(`/api/appointments/${apptId}`, { method: "DELETE" });
       showToast("Cita eliminada.");
       loadAppointmentsForDate();
       if (state.activeTab === "calendar") loadWeeklyCalendar();
@@ -1374,7 +1599,7 @@ async function deleteAppointmentConfirm(apptId) {
 async function deletePatientConfirm(patientId, patientName) {
   if (confirm(`¿Estás segura de que deseas eliminar a "${patientName}" y todas sus citas asociadas?`)) {
     try {
-      const res = await fetch(`/api/patients/${patientId}`, { method: "DELETE" });
+      const res = await apiFetch(`/api/patients/${patientId}`, { method: "DELETE" });
       const json = await res.json();
       if (json.success) {
         showToast("Paciente eliminado con éxito.");
@@ -1393,7 +1618,7 @@ async function deletePatientConfirm(patientId, patientName) {
 async function deleteServiceConfirm(serviceId, serviceName) {
   if (confirm(`¿Estás segura de que deseas eliminar el tratamiento "${serviceName}" del catálogo?`)) {
     try {
-      const res = await fetch(`/api/services/${serviceId}`, { method: "DELETE" });
+      const res = await apiFetch(`/api/services/${serviceId}`, { method: "DELETE" });
       const json = await res.json();
       if (json.success) {
         showToast("Tratamiento eliminado del catálogo.");
@@ -1423,7 +1648,7 @@ async function handleAppointmentSubmit(e) {
   const method = id ? "PUT" : "POST";
 
   try {
-    const res = await fetch(url, {
+    const res = await apiFetch(url, {
       method,
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload)
@@ -1459,7 +1684,7 @@ async function handlePatientSubmit(e) {
   const method = id ? "PUT" : "POST";
 
   try {
-    const res = await fetch(url, {
+    const res = await apiFetch(url, {
       method,
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload)
@@ -1493,7 +1718,7 @@ async function handleServiceSubmit(e) {
   const method = id ? "PUT" : "POST";
 
   try {
-    const res = await fetch(url, {
+    const res = await apiFetch(url, {
       method,
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload)

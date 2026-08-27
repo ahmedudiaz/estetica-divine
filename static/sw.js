@@ -1,9 +1,10 @@
 // Service Worker para PWA Estética Divine
-const CACHE_NAME = "estetica-divine-cache-v4";
+const CACHE_NAME = "estetica-divine-cache-v5";
 const ASSETS = [
   "/",
-  "/static/css/style.css?v=4.0",
-  "/static/js/app.js?v=4.0",
+  "/static/css/style.css?v=5.0",
+  "/static/js/app.js?v=5.0",
+  "/static/img/logo.jpg",
   "/static/manifest.json"
 ];
 

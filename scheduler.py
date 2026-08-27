@@ -17,8 +17,8 @@ def format_date_es(date_str):
     except Exception:
         return date_str
 
-def generate_reminder_message(appointment, base_url="http://localhost:8000"):
-    settings = get_settings()
+def generate_reminder_message(appointment, base_url="http://localhost:8000", user_id=1):
+    settings = get_settings(user_id)
     template = settings.get("whatsapp_template", "")
     
     fecha_formateada = format_date_es(appointment["appointment_date"])
@@ -55,7 +55,7 @@ def generate_whatsapp_link(phone, message):
     # Enlace universal wa.me
     return f"https://wa.me/{cleaned_phone}?text={encoded_text}"
 
-def get_tomorrow_reminders(base_url="http://localhost:8000"):
+def get_tomorrow_reminders(base_url="http://localhost:8000", user_id=1):
     tomorrow_str = (date.today() + timedelta(days=1)).strftime("%Y-%m-%d")
     conn = get_connection()
     query = """
@@ -65,16 +65,16 @@ def get_tomorrow_reminders(base_url="http://localhost:8000"):
     FROM appointments a
     JOIN patients p ON a.patient_id = p.id
     JOIN services s ON a.service_id = s.id
-    WHERE a.appointment_date = ? AND a.status != 'Cancelada'
+    WHERE a.user_id = ? AND a.appointment_date = ? AND a.status != 'Cancelada'
     ORDER BY a.appointment_time ASC
     """
-    rows = conn.execute(query, (tomorrow_str,)).fetchall()
+    rows = conn.execute(query, (user_id, tomorrow_str)).fetchall()
     conn.close()
 
     reminders = []
     for r in rows:
         appt = dict(r)
-        msg = generate_reminder_message(appt, base_url)
+        msg = generate_reminder_message(appt, base_url, user_id)
         wa_link = generate_whatsapp_link(appt["patient_phone"], msg)
         appt["formatted_message"] = msg
         appt["whatsapp_link"] = wa_link
