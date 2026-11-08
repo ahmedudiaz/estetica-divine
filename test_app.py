@@ -19,10 +19,11 @@ from database import (
     init_db, get_stats, get_appointments, create_appointment,
     get_patients, create_patient, get_services, get_settings,
     get_appointment_by_token, confirm_appointment_by_token,
+    encode_appointment_payload, restore_appointment_from_payload, delete_appointment,
     create_user, authenticate_user, create_session, get_user_by_session_token, delete_session,
     reset_user_password, export_full_state, import_full_state
 )
-from scheduler import get_tomorrow_reminders, generate_reminder_message
+from scheduler import get_tomorrow_reminders, generate_reminder_message, get_local_today
 
 class TestEsteticaDivine(unittest.TestCase):
 
@@ -134,7 +135,7 @@ class TestEsteticaDivine(unittest.TestCase):
         selected_service = services[0]
 
         # 2. Agendar cita para mañana
-        tomorrow = (date.today() + timedelta(days=1)).strftime("%Y-%m-%d")
+        tomorrow = (get_local_today() + timedelta(days=1)).strftime("%Y-%m-%d")
         new_appt = create_appointment({
             "patient_id": new_patient["id"],
             "service_id": selected_service["id"],
@@ -152,11 +153,22 @@ class TestEsteticaDivine(unittest.TestCase):
         target_reminder = next((r for r in reminders if r["id"] == new_appt["id"]), None)
         self.assertIsNotNone(target_reminder)
         self.assertIn("https://wa.me/34655443322", target_reminder["whatsapp_link"])
+        self.assertIn("?d=", target_reminder["confirmation_url"])
 
-        # 4. Confirmar cita desde portal
-        confirmed = confirm_appointment_by_token(new_appt["confirmation_token"], action="confirm")
+        # 4. Probar reconstrucción automática si el servidor se reinició y el paciente abre el link
+        encoded_d = encode_appointment_payload(new_appt, user_id=1)
+        tok = new_appt["confirmation_token"]
+        delete_appointment(new_appt["id"], user_id=1)
+        self.assertIsNone(get_appointment_by_token(tok))
+
+        restored = restore_appointment_from_payload(tok, encoded_d)
+        self.assertIsNotNone(restored)
+        self.assertEqual(restored["confirmation_token"], tok)
+
+        # 5. Confirmar cita desde portal
+        confirmed = confirm_appointment_by_token(tok, action="confirm")
         self.assertEqual(confirmed["status"], "Confirmada")
-        print(f"[TEST] Cita agendada, recordatorio WhatsApp y confirmación verificados.")
+        print(f"[TEST] Cita agendada, recordatorio WhatsApp, autorrecuperación y confirmación verificados.")
 
     def test_calendar_sync_and_mobile(self):
         from calendar_sync import get_local_ip, generate_ics_feed

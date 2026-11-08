@@ -6,6 +6,8 @@ import sqlite3
 import os
 import secrets
 import hashlib
+import json
+import base64
 from datetime import datetime, date, timedelta
 
 DB_PATH = os.path.join(os.path.dirname(__file__), "agenda_estetica.db")
@@ -146,6 +148,16 @@ def init_db():
         columns = [row["name"] for row in cursor.execute(f"PRAGMA table_info({table})").fetchall()]
         if "user_id" not in columns:
             cursor.execute(f"ALTER TABLE {table} ADD COLUMN user_id INTEGER DEFAULT 1")
+
+    # Asegurar que todas las citas existentes tengan un confirmation_token válido
+    rows_no_token = cursor.execute(
+        "SELECT id FROM appointments WHERE confirmation_token IS NULL OR confirmation_token = '' OR confirmation_token = 'None'"
+    ).fetchall()
+    for r in rows_no_token:
+        cursor.execute(
+            "UPDATE appointments SET confirmation_token = ? WHERE id = ?",
+            (secrets.token_urlsafe(16), r["id"])
+        )
 
     # Crear Usuario Principal por Defecto si no existe ninguno
     cursor.execute("SELECT COUNT(*) as count FROM users")
@@ -455,12 +467,19 @@ def get_stats(user_id=1):
 def get_appointments(user_id=1, date_from=None, date_to=None, status=None, patient_id=None):
     conn = get_connection()
     query = """
-    SELECT a.*, p.name as patient_name, p.phone as patient_phone, p.email as patient_email,
-           s.name as service_name, s.category as service_category, s.price as service_price,
-           s.duration_minutes as service_duration, s.instructions as service_instructions, s.color as service_color
+    SELECT a.*,
+           COALESCE(p.name, 'Paciente') as patient_name,
+           COALESCE(p.phone, '') as patient_phone,
+           COALESCE(p.email, '') as patient_email,
+           COALESCE(s.name, 'Tratamiento Estético') as service_name,
+           COALESCE(s.category, 'Estética') as service_category,
+           COALESCE(s.price, 0) as service_price,
+           COALESCE(s.duration_minutes, a.duration_minutes, 60) as service_duration,
+           COALESCE(s.instructions, '') as service_instructions,
+           COALESCE(s.color, '#E0A9AF') as service_color
     FROM appointments a
-    JOIN patients p ON a.patient_id = p.id
-    JOIN services s ON a.service_id = s.id
+    LEFT JOIN patients p ON a.patient_id = p.id
+    LEFT JOIN services s ON a.service_id = s.id
     WHERE a.user_id = ?
     """
     params = [user_id]
@@ -480,18 +499,34 @@ def get_appointments(user_id=1, date_from=None, date_to=None, status=None, patie
 
     query += " ORDER BY a.appointment_date ASC, a.appointment_time ASC"
     rows = conn.execute(query, params).fetchall()
+    result = []
+    for r in rows:
+        d = dict(r)
+        if not d.get("confirmation_token") or d.get("confirmation_token") == "None":
+            new_tok = secrets.token_urlsafe(16)
+            conn.execute("UPDATE appointments SET confirmation_token = ? WHERE id = ?", (new_tok, d["id"]))
+            conn.commit()
+            d["confirmation_token"] = new_tok
+        result.append(d)
     conn.close()
-    return [dict(r) for r in rows]
+    return result
 
 def get_appointment_by_id(appt_id, user_id=None):
     conn = get_connection()
     query = """
-    SELECT a.*, p.name as patient_name, p.phone as patient_phone, p.email as patient_email,
-           s.name as service_name, s.category as service_category, s.price as service_price,
-           s.duration_minutes as service_duration, s.instructions as service_instructions, s.color as service_color
+    SELECT a.*,
+           COALESCE(p.name, 'Paciente') as patient_name,
+           COALESCE(p.phone, '') as patient_phone,
+           COALESCE(p.email, '') as patient_email,
+           COALESCE(s.name, 'Tratamiento Estético') as service_name,
+           COALESCE(s.category, 'Estética') as service_category,
+           COALESCE(s.price, 0) as service_price,
+           COALESCE(s.duration_minutes, a.duration_minutes, 60) as service_duration,
+           COALESCE(s.instructions, '') as service_instructions,
+           COALESCE(s.color, '#E0A9AF') as service_color
     FROM appointments a
-    JOIN patients p ON a.patient_id = p.id
-    JOIN services s ON a.service_id = s.id
+    LEFT JOIN patients p ON a.patient_id = p.id
+    LEFT JOIN services s ON a.service_id = s.id
     WHERE a.id = ?
     """
     params = [appt_id]
@@ -500,22 +535,134 @@ def get_appointment_by_id(appt_id, user_id=None):
         params.append(user_id)
 
     row = conn.execute(query, params).fetchone()
+    if not row:
+        conn.close()
+        return None
+    d = dict(row)
+    if not d.get("confirmation_token") or d.get("confirmation_token") == "None":
+        new_tok = secrets.token_urlsafe(16)
+        conn.execute("UPDATE appointments SET confirmation_token = ? WHERE id = ?", (new_tok, d["id"]))
+        conn.commit()
+        d["confirmation_token"] = new_tok
     conn.close()
-    return dict(row) if row else None
+    return d
 
 def get_appointment_by_token(token):
+    if not token:
+        return None
     conn = get_connection()
     row = conn.execute("""
-    SELECT a.*, p.name as patient_name, p.phone as patient_phone, p.email as patient_email,
-           s.name as service_name, s.category as service_category, s.price as service_price,
-           s.duration_minutes as service_duration, s.instructions as service_instructions, s.color as service_color
+    SELECT a.*,
+           COALESCE(p.name, 'Paciente') as patient_name,
+           COALESCE(p.phone, '') as patient_phone,
+           COALESCE(p.email, '') as patient_email,
+           COALESCE(s.name, 'Tratamiento Estético') as service_name,
+           COALESCE(s.category, 'Estética') as service_category,
+           COALESCE(s.price, 0) as service_price,
+           COALESCE(s.duration_minutes, a.duration_minutes, 60) as service_duration,
+           COALESCE(s.instructions, '') as service_instructions,
+           COALESCE(s.color, '#E0A9AF') as service_color
     FROM appointments a
-    JOIN patients p ON a.patient_id = p.id
-    JOIN services s ON a.service_id = s.id
+    LEFT JOIN patients p ON a.patient_id = p.id
+    LEFT JOIN services s ON a.service_id = s.id
     WHERE a.confirmation_token = ?
     """, (token,)).fetchone()
     conn.close()
     return dict(row) if row else None
+
+def encode_appointment_payload(appointment, user_id=1):
+    try:
+        payload = {
+            "id": appointment.get("id"),
+            "u": appointment.get("user_id", user_id),
+            "pid": appointment.get("patient_id", 1),
+            "pn": appointment.get("patient_name", "Paciente"),
+            "pp": appointment.get("patient_phone", ""),
+            "sid": appointment.get("service_id", 1),
+            "sn": appointment.get("service_name", "Tratamiento Estético"),
+            "si": appointment.get("service_instructions", ""),
+            "sd": appointment.get("duration_minutes", 60),
+            "sp": appointment.get("service_price", 0),
+            "ad": appointment.get("appointment_date", ""),
+            "at": appointment.get("appointment_time", ""),
+            "spec": appointment.get("specialist", "Especialista")
+        }
+        raw = json.dumps(payload, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
+        return base64.urlsafe_b64encode(raw).decode("ascii").rstrip("=")
+    except Exception:
+        return ""
+
+def restore_appointment_from_payload(token, encoded_payload):
+    if not token or not encoded_payload:
+        return None
+    existing = get_appointment_by_token(token)
+    if existing:
+        return existing
+    try:
+        padding = "=" * (-len(encoded_payload) % 4)
+        raw = base64.urlsafe_b64decode((encoded_payload + padding).encode("ascii")).decode("utf-8")
+        p = json.loads(raw)
+        user_id = int(p.get("u") or 1)
+        patient_id = int(p.get("pid") or 1)
+        service_id = int(p.get("sid") or 1)
+
+        conn = get_connection()
+        cursor = conn.cursor()
+
+        # Asegurar que el paciente exista
+        pat = cursor.execute("SELECT id FROM patients WHERE id = ?", (patient_id,)).fetchone()
+        if not pat:
+            cursor.execute("""
+            INSERT OR IGNORE INTO patients (id, user_id, name, phone, allergies, skin_type)
+            VALUES (?, ?, ?, ?, 'Ninguna', 'Normal')
+            """, (patient_id, user_id, p.get("pn", "Paciente"), p.get("pp", "")))
+
+        # Asegurar que el servicio exista
+        svc = cursor.execute("SELECT id FROM services WHERE id = ?", (service_id,)).fetchone()
+        if not svc:
+            cursor.execute("""
+            INSERT OR IGNORE INTO services (id, user_id, name, category, duration_minutes, price, instructions, color, is_active)
+            VALUES (?, ?, ?, 'Estética', ?, ?, ?, '#E0A9AF', 1)
+            """, (
+                service_id, user_id, p.get("sn", "Tratamiento Estético"),
+                int(p.get("sd") or 60), float(p.get("sp") or 0), p.get("si", "")
+            ))
+
+        appt_id = p.get("id")
+        if appt_id:
+            cursor.execute("""
+            INSERT OR IGNORE INTO appointments (
+                id, user_id, patient_id, service_id, appointment_date, appointment_time,
+                duration_minutes, status, specialist, confirmation_token
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, 'Recordatorio Enviado', ?, ?)
+            """, (
+                int(appt_id), user_id, patient_id, service_id,
+                p.get("ad", date.today().strftime("%Y-%m-%d")),
+                p.get("at", "10:00"),
+                int(p.get("sd") or 60),
+                p.get("spec", "Cosmetóloga Constanza Díaz"),
+                token
+            ))
+        else:
+            cursor.execute("""
+            INSERT INTO appointments (
+                user_id, patient_id, service_id, appointment_date, appointment_time,
+                duration_minutes, status, specialist, confirmation_token
+            ) VALUES (?, ?, ?, ?, ?, ?, 'Recordatorio Enviado', ?, ?)
+            """, (
+                user_id, patient_id, service_id,
+                p.get("ad", date.today().strftime("%Y-%m-%d")),
+                p.get("at", "10:00"),
+                int(p.get("sd") or 60),
+                p.get("spec", "Cosmetóloga Constanza Díaz"),
+                token
+            ))
+        conn.commit()
+        conn.close()
+        return get_appointment_by_token(token)
+    except Exception as e:
+        print(f"Error restaurando cita desde payload: {e}")
+        return None
 
 def create_appointment(data, user_id=1):
     conn = get_connection()
@@ -608,12 +755,13 @@ def mark_reminder_sent(appt_id, message_body=""):
     conn = get_connection()
     appt = get_appointment_by_id(appt_id)
     if appt:
+        new_status = appt["status"] if appt["status"] == "Confirmada" else "Recordatorio Enviado"
         conn.execute("""
         UPDATE appointments 
-        SET status = 'Recordatorio Enviado',
+        SET status = ?,
             reminder_sent_at = CURRENT_TIMESTAMP 
         WHERE id = ?
-        """, (appt_id,))
+        """, (new_status, appt_id))
 
         conn.execute("""
         INSERT INTO notification_logs (appointment_id, patient_id, channel, message_body, status)
@@ -824,6 +972,15 @@ def import_full_state(data, user_id=1):
     conn = get_connection()
     cursor = conn.cursor()
 
+    # Preservar confirmaciones o cancelaciones recientes registradas en el servidor
+    existing_rows = cursor.execute("""
+    SELECT id, confirmation_token, status, confirmed_at, canceled_at, cancellation_reason
+    FROM appointments
+    WHERE user_id = ? AND status IN ('Confirmada', 'Cancelada')
+    """, (user_id,)).fetchall()
+    confirmed_by_id = {r["id"]: dict(r) for r in existing_rows if r["id"]}
+    confirmed_by_token = {r["confirmation_token"]: dict(r) for r in existing_rows if r["confirmation_token"]}
+
     if "patients" in data and isinstance(data["patients"], list):
         cursor.execute("DELETE FROM notification_logs WHERE patient_id IN (SELECT id FROM patients WHERE user_id = ?)", (user_id,))
         cursor.execute("DELETE FROM appointments WHERE user_id = ?", (user_id,))
@@ -853,19 +1010,34 @@ def import_full_state(data, user_id=1):
 
     if "appointments" in data and isinstance(data["appointments"], list):
         for a in data["appointments"]:
+            aid = a.get("id")
+            tok = a.get("confirmation_token") or secrets.token_urlsafe(16)
+            status = a.get("status", "Pendiente")
+            confirmed_at = a.get("confirmed_at")
+            canceled_at = a.get("canceled_at")
+            cancellation_reason = a.get("cancellation_reason")
+
+            # Si en el servidor ya fue Confirmada o Cancelada por la paciente, respetar ese estado
+            srv_match = confirmed_by_token.get(tok) or confirmed_by_id.get(aid)
+            if srv_match and status in ("Pendiente", "Recordatorio Enviado"):
+                status = srv_match["status"]
+                confirmed_at = srv_match.get("confirmed_at") or confirmed_at
+                canceled_at = srv_match.get("canceled_at") or canceled_at
+                cancellation_reason = srv_match.get("cancellation_reason") or cancellation_reason
+
             cursor.execute("""
             INSERT OR REPLACE INTO appointments (
                 id, user_id, patient_id, service_id, appointment_date, appointment_time, duration_minutes,
                 status, specialist, notes, confirmation_token, reminder_sent_at, confirmed_at, canceled_at, cancellation_reason, created_at
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
-                a.get("id"), user_id, a.get("patient_id"), a.get("service_id"),
+                aid, user_id, a.get("patient_id"), a.get("service_id"),
                 a.get("appointment_date"), a.get("appointment_time"),
-                a.get("duration_minutes", 60), a.get("status", "Pendiente"),
+                a.get("duration_minutes", 60), status,
                 a.get("specialist", "Cosmetóloga Constanza Díaz"),
-                a.get("notes"), a.get("confirmation_token") or secrets.token_urlsafe(16),
-                a.get("reminder_sent_at"), a.get("confirmed_at"),
-                a.get("canceled_at"), a.get("cancellation_reason"),
+                a.get("notes"), tok,
+                a.get("reminder_sent_at"), confirmed_at,
+                canceled_at, cancellation_reason,
                 a.get("created_at")
             ))
 

@@ -16,7 +16,7 @@ from database import (
     get_patients, get_patient_by_id, create_patient, update_patient, delete_patient,
     get_services, get_service_by_id, create_service, update_service, delete_service,
     get_settings, update_setting, mark_reminder_sent,
-    get_appointment_by_token, confirm_appointment_by_token,
+    get_appointment_by_token, confirm_appointment_by_token, restore_appointment_from_payload,
     export_full_state, import_full_state,
     create_user, authenticate_user, create_session, get_user_by_session_token, delete_session,
     reset_user_password
@@ -35,11 +35,27 @@ class EsteticaRequestHandler(http.server.BaseHTTPRequestHandler):
         print(f"[{datetime.now().strftime('%H:%M:%S')}] {args[0]} {args[1]} -> {args[2]}")
 
     def get_base_url(self):
+        host = self.headers.get("Host", f"localhost:{PORT}")
+        proto = self.headers.get("X-Forwarded-Proto", "").split(",")[0].strip().lower()
+        hostname = host.split(":")[0].lower()
+        is_local = (
+            hostname in ("localhost", "127.0.0.1", "0.0.0.0")
+            or hostname.startswith("192.168.")
+            or hostname.startswith("10.")
+            or hostname.startswith("172.")
+            or hostname.endswith(".local")
+        )
+        # Si ya estamos en un dominio público en internet (ej. Render), usar ese dominio directamente con HTTPS
+        if not is_local:
+            scheme = proto if proto in ("http", "https") else "https"
+            return f"{scheme}://{host}"
+
         pub_url = get_saved_public_url()
         if pub_url and (pub_url.startswith("http://") or pub_url.startswith("https://")):
             return pub_url.rstrip("/")
-        host = self.headers.get("Host", f"localhost:{PORT}")
-        return f"http://{host}"
+
+        scheme = proto if proto in ("http", "https") else "http"
+        return f"{scheme}://{host}"
 
     def send_json(self, data, status_code=200):
         response_bytes = json.dumps(data, ensure_ascii=False, default=str).encode("utf-8")
@@ -190,8 +206,12 @@ class EsteticaRequestHandler(http.server.BaseHTTPRequestHandler):
 
         # Portal de Confirmación de Pacientes (Público mediante Token)
         if path.startswith("/api/confirm-info/"):
-            token = path.split("/")[-1]
+            parts = [p for p in path.split("/") if p]
+            token = parts[-1] if len(parts) >= 3 else ""
+            encoded_d = query_params.get("d", [""])[0]
             appt = get_appointment_by_token(token)
+            if not appt and encoded_d:
+                appt = restore_appointment_from_payload(token, encoded_d)
             if appt:
                 user_id = appt.get("user_id", 1)
                 settings = get_settings(user_id=user_id)
@@ -340,17 +360,25 @@ class EsteticaRequestHandler(http.server.BaseHTTPRequestHandler):
             return self.send_json({"success": True, "message": "Sesión cerrada"})
 
         # Confirmación de Pacientes (Público con Token)
-        if path.startswith("/api/confirm/"):
-            token = path.split("/")[-1]
+        if path.startswith("/api/confirm/") or path.startswith("/api/confirm-action/"):
+            parts = [p for p in path.split("/") if p]
+            token = parts[-1] if len(parts) >= 3 else ""
+            query_params = urllib.parse.parse_qs(parsed_url.query)
+            encoded_d = body.get("d") or query_params.get("d", [""])[0]
             action = body.get("action", "confirm")
             reason = body.get("reason", "")
-            
+
+            appt = get_appointment_by_token(token)
+            if not appt and encoded_d:
+                restore_appointment_from_payload(token, encoded_d)
+
             updated_appt = confirm_appointment_by_token(token, action=action, reason=reason)
             if updated_appt:
                 return self.send_json({
                     "success": True,
                     "data": {
                         "appointment": updated_appt,
+                        "status": updated_appt.get("status", "Confirmada"),
                         "action": action
                     }
                 })
